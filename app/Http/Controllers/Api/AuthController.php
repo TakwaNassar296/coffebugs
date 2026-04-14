@@ -214,7 +214,7 @@ class AuthController extends Controller
 
 
         try {
-            $this->twilio->sendSMS($user->phone_number, $message);
+         //   $this->twilio->sendSMS($user->phone_number, $message);
             Log::info("OTP sent to: " . $user->phone_number);
         } catch (\Exception $e) {
             Log::error("Twilio Error: " . $e->getMessage());
