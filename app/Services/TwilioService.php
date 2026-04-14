@@ -8,15 +8,20 @@ use Twilio\Rest\Client;
 class TwilioService
 {
     protected $client;
+
     protected $from;
 
     public function __construct()
     {
-        $this->client = new Client(env('TWILIO_SID'), env('TWILIO_AUTH_TOKEN'));
+        // $this->client = new Client(env('TWILIO_SID'), env('TWILIO_AUTH_TOKEN'));
+        $this->client = null;
         $this->from = env('TWILIO_PHONE');
     }
 
-    public function getClient(): Client
+    /**
+     * @return Client|null
+     */
+    public function getClient()
     {
         return $this->client;
     }
@@ -24,15 +29,15 @@ class TwilioService
     public function sendSMS(string $to, string $message): bool
     {
         try {
-            $this->client->messages->create($to, [
-                'from' => $this->from,
-                'body' => $message
-            ]);
+            // $this->client->messages->create($to, [
+            //     'from' => $this->from,
+            //     'body' => $message,
+            // ]);
 
-            
             return true;
         } catch (\Exception $e) {
             Log::error('Twilio SMS Error: ' . $e->getMessage());
+
             return false;
         }
     }
