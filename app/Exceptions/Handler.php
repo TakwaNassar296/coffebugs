@@ -71,7 +71,7 @@ class Handler extends ExceptionHandler
 
             // when try excepted resource api methods or nonexistent method
             if ($e instanceof MethodNotAllowedHttpException) {
-                return $this->errorMessage('The specified methode for the request is invaild.', 404);
+                return $this->errorMessage('The specified methode for the request is invaild.', 405);
             }
 
             // general http exception
@@ -87,12 +87,13 @@ class Handler extends ExceptionHandler
                 }
             }
 
-            // return $this->errorMessage('Unexpected Error. Try later.', 500);
+            // Ensure API exceptions never fall through without a JSON response.
+            return $this->errorMessage(
+                config('app.debug') ? $e->getMessage() : 'Server Error',
+                500
+            );
         }
 
-        // if we turn on the debugbar
-        if (config('app.debug')) {
-            return parent::render($request, $e);
-        }
+        return parent::render($request, $e);
     }
 }
