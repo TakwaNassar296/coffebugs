@@ -50,6 +50,11 @@ Route::middleware(ApiLang::class)->group(function () {
 
     /***************************** Authentication  ***************************/
     Route::prefix('auth')->controller(AuthController::class)->group(function () {
+        Route::get('login', function () {
+            return response()->json([
+                'message' => 'Use POST method for login.'
+            ], 405);
+        });
         Route::post('register', 'register');
         Route::post('login', 'login');
         Route::post('logout', 'logout')->middleware('auth:user');
