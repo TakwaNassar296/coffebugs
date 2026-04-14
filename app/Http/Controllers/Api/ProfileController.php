@@ -57,13 +57,8 @@ class ProfileController extends Controller
 
     public function updateTypeDelivery(Request $request)
     {
-        /** @var \App\Models\User|null $user */
-        $user = Auth::guard('user')->user();
-
-        if (!$user) {
-            return $this->errorResponse('User not found.', 404);
-        }
-
+      
+       $user=Auth::guard('user')->user();
         $validator = Validator::make($request->all(), [
             'type_delivery' => 'required|in:pick,delivery',
         ]);
