@@ -60,7 +60,7 @@ class ProfileController extends Controller
       
        $user=Auth::guard('user')->user();
         $validator = Validator::make($request->all(), [
-            'type_delivery' => 'required|in:pick,delivery',
+            'type_delivery' => 'required|in:pickup,delivery',
         ]);
 
         if ($validator->fails()) {
