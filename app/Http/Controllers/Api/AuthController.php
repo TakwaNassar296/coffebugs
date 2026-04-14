@@ -89,6 +89,13 @@ class AuthController extends Controller
         ], 200);
     }
 
+    public function loginMethodNotAllowed()
+    {
+        return response()->json([
+            'message' => 'Use POST method for login.',
+        ], 405);
+    }
+
     public function verifyOtp(VerifOtpRequest $request)
     {
         $phoneNumber = PhoneNumber::normalize(
