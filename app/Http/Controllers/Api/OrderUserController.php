@@ -29,6 +29,7 @@ class OrderUserController extends Controller
                 'prepared',
                 'shipped',
                 'arrived',
+                'paid'
             ],
             'canceled' => ['canceled'],
             'completed' => ['completed'],

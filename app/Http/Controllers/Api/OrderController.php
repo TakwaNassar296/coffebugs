@@ -34,6 +34,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'coupon_code' => 'nullable|string|exists:coupons,code',
+            'type'        => 'required|in:delivery,pick_up',
         ]);
 
         $user = Auth::guard('user')->user();
@@ -61,8 +62,14 @@ class OrderController extends Controller
         $taxPercentage = (float) SiteSetting::value('tax_percentage', 0);
         $freeDeliveryMinimum = (float) SiteSetting::value('free_delivery_minimum', 0);
 
-        if ($itemTotal >= $freeDeliveryMinimum) {
-            $deliveryCharge = 0;
+        $deliveryCharge = 0;
+        if ($request->type === 'delivery') {
+            $deliveryCharge = (float) SiteSetting::value('delivery_charge', 0);
+            $freeDeliveryMinimum = (float) SiteSetting::value('free_delivery_minimum', 0);
+
+            if ($itemTotal >= $freeDeliveryMinimum) {
+                $deliveryCharge = 0;
+            }
         }
 
         $taxAmount = round(($itemTotal * $taxPercentage) / 100, 2);
@@ -96,7 +103,9 @@ class OrderController extends Controller
             }
         }
 
-        $descriptionDelivery = SiteSetting::value('text_order', "Discount applies to selected items ordered with your added product");
+        $descriptionDelivery = ($request->type === 'delivery') 
+            ? SiteSetting::value('text_order', "Delivery charges apply based on your location.") 
+            : "No delivery charges apply for pick up orders.";
         return $this->successResponse(__('apis.order_summary'), [
             'subtotal' => round($itemTotal, 2),
             'discount' => $discount,
@@ -308,8 +317,13 @@ class OrderController extends Controller
         $confirm = $request->boolean('confirm');
 
 
-        if ($user->cart && $user->cart->items()->exists()) {
-            return $this->errorResponse(__('apis.cart_not_empty'), 400);
+        if ($user->cart && $user->cart->items()->exists() && !$confirm) {
+            return $this->customResponse(
+                key: 'need_confirmation',
+                message: 'Your current cart is not empty. Replacing it will clear all current items.',
+                status: 409,
+                data: ['confirm_required' => true]
+            );
         }
 
         $oldOrder = Order::with(['items.optionValues', 'items.product'])
@@ -321,9 +335,8 @@ class OrderController extends Controller
             return $this->errorResponse(__('apis.order_not_found'), 404);
         }
 
-
-        $branch = Branch::find($request->branch_id);
-        if (! $branch) {
+        $branchId = $oldOrder->branch_id;
+        if (!  $branchId ) {
             return $this->errorResponse(__('apis.branch_not_found'), 404);
         }
 
@@ -345,7 +358,7 @@ class OrderController extends Controller
             }
 
             $isAvailable = DB::table('branch_product')
-                ->where('branch_id', $branch->id)
+                ->where('branch_id', $branchId)
                 ->where('product_id', $product->id)
                 ->where('status', 1)
                 ->exists();
@@ -377,6 +390,10 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
+
+            if ($confirm && $user->cart) {
+                $user->cart->delete(); 
+            }
             $cart = Cart::firstOrCreate([
                 'user_id' => $user->id,
                 'branch_id' => $oldOrder->branch_id,
@@ -410,7 +427,7 @@ class OrderController extends Controller
                 }
 
                 $isAvailable = DB::table('branch_product')
-                    ->where('branch_id', $branch->id)
+                    ->where('branch_id',  $branchId )
                     ->where('product_id', $product->id)
                     ->where('status', 1)
                     ->exists();

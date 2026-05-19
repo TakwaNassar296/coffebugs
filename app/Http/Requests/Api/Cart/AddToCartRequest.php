@@ -28,6 +28,7 @@ class AddToCartRequest extends FormRequest
             'quantity' => 'required|integer|min:1',
             'option_value_ids' => 'nullable|array',
             'option_value_ids.*' => 'exists:product_values,id',
+            'replace'    => 'nullable|in:0,1',
         ];
     }
 

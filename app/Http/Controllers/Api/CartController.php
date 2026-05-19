@@ -36,22 +36,19 @@ class CartController extends Controller
     {
         $user = Auth::guard('user')->user();
 
-        // 1. Validate option values actually belong to this product
         $requestedIds = (array) ($request['option_value_ids'] ?? []);
-
         $validOptionValues = [];
         if (!empty($requestedIds)) {
             $validOptionValues = ProductValue::whereIn('id', $requestedIds)
                 ->whereHas('productOption', function ($query) use ($request) {
                     $query->where('product_id', $request['product_id']);
                 })->pluck('id')->toArray();
-        
+                
             if (count($validOptionValues) !== count($requestedIds)) {
-                return $this->errorResponse(__('apis.invalid_option_values'), 422);
+                return $this->errorResponse('Invalid option values', 422);
             }
         }
 
-        // 2. Check the product is available in this branch
         $branchProduct = DB::table('branch_product')
             ->where('product_id', $request['product_id'])
             ->where('branch_id', $request['branch_id'])
@@ -59,22 +56,28 @@ class CartController extends Controller
             ->first();
 
         if (!$branchProduct) {
-            return $this->errorResponse(__('apis.product_not_available'), 422);
+            return $this->errorResponse('Product is not available in this branch', 422);
         }
 
         DB::beginTransaction();
         try {
-            // Retrieve active cart (if exists)
             $cart = $user->cart()->first();
 
             if ($cart) {
-                // Strictly compare branch IDs (cast to int if needed to avoid type mismatch)
                 if ((int)$cart->branch_id !== (int)$request['branch_id']) {
-                    DB::rollBack();
-                    return $this->errorResponse(__('apis.same_branch_only'), 422);
+                    if (!$request->has('replace') || $request->replace != 1) {
+                        DB::rollBack();
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'Your cart contains items from another branch. Do you want to replace them?', 
+                            'requires_confirmation' => true, 
+                        ], 409);
+                    }
+                    
+                    $cart->items()->delete();
+                    $cart->update(['branch_id' => $request['branch_id']]);
                 }
             } else {
-                // Create a new cart tied to this branch
                 $cart = $user->cart()->create([
                     'branch_id' => $request['branch_id'],
                 ]);
@@ -83,28 +86,11 @@ class CartController extends Controller
             $product = Product::findOrFail($request['product_id']);
             $optionValues = ProductValue::whereIn('id', $requestedIds)->get();
 
-            // Calculate the price
             $unitPrice = $product->price_after_discount ?? $product->price;
             $original_price = ($unitPrice + $optionValues->sum('extra_price')) * $request['quantity'];
             $discount_price = 0;
-
-            // Get discount for related products
-          //  $siteSetting = SiteSetting::first();
-          //  $relatedDiscount = $siteSetting ? $siteSetting->related_product_discount : 25;
-          //  $relatedProducts = $product->relatedProducts()->pluck('products.id')->toArray();
-
-            // Check if user has any related product already in cart
-           // $hasRelatedInCart = $cart->items()
-            //    ->whereIn('product_id', $relatedProducts)
-             //   ->exists();
-
-           // if ($hasRelatedInCart && $relatedDiscount > 0) {
-           //     $discount_price = $relatedDiscount * $request['quantity'];
-           // }
-
             $total_price = max($original_price - $discount_price, 0);
 
-            // Create the cart item
             $cartItem = $cart->items()->create([
                 'product_id'     => $request['product_id'],
                 'quantity'       => $request['quantity'],
@@ -113,7 +99,6 @@ class CartController extends Controller
                 'total_price'    => $total_price,
             ]);
 
-            // Attach option values to cart item
             $optionValueCreateData = [];
             foreach ($validOptionValues as $valueId) {
                 $optionValueCreateData[] = [
@@ -121,20 +106,18 @@ class CartController extends Controller
                     'product_value_id' => $valueId,
                 ];
             }
-            // Bulk insert for efficiency
+            
             if ($optionValueCreateData) {
                 CartItemOptionValue::insert($optionValueCreateData);
             }
 
             DB::commit();
-
-            return $this->successResponse(__('apis.item_added'));
+            return $this->successResponse('Item added successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->errorResponse(__('apis.something_wrong') . ': ' . $e->getMessage(), 500);
+            return $this->errorResponse('Something went wrong: ' . $e->getMessage(), 500);
         }
     }
-
 
     public function updateQuantity(Request $request, $itemId)
     {

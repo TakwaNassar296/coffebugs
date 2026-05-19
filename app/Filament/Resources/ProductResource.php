@@ -230,9 +230,8 @@ class ProductResource extends Resource
                             Repeater::make('values')
                                 ->relationship('values')
                                 ->schema([
-                                    TextInput::make('value')
-                                        ->label(__('admin.value'))
-                                        ->required()->columns(2),
+                                    Hidden::make('value')
+                                       ->default(1),
                                     TextInput::make('extra_price')
                                         ->label(__('admin.price'))
                                         ->required()->columns(2)

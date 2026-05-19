@@ -15,9 +15,15 @@ class ProductController extends Controller
 {
     use ApiResponse;
 
-    public function index()
+    public function index(Request $request)
     {
-        $data = Product::withCount('options')->paginate(10);
+        $query = Product::query()->withCount('options');
+
+        if ($request->has('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        $data = $query->paginate(10);
 
         if ($data->isEmpty()) {
             return response()->json([

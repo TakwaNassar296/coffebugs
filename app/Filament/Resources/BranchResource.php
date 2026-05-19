@@ -67,10 +67,10 @@ class BranchResource extends Resource
                                 Forms\Components\Section::make(__('strings.branch_details'))
                                     ->schema([
 
-                                        Forms\Components\Select::make('admin_id')
-                                            ->label(__('strings.manager_responsible_for_the_branch'))
-                                            ->required()
-                                            ->options(Admin::where('id' , '!=', 1)->get()->pluck('name', 'id')),
+                                       // Forms\Components\Select::make('admin_id')
+                                        //    ->label(__('strings.manager_responsible_for_the_branch'))
+                                        //    ->required()
+                                        //    ->options(Admin::where('id' , '!=', 1)->get()->pluck('name', 'id')),
 
                                         Forms\Components\TextInput::make('name')
                                             ->label(__('strings.branch_name'))

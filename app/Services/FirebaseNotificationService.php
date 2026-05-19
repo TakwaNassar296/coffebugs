@@ -2,79 +2,80 @@
 
 namespace App\Services;
 
-use GuzzleHttp\Client as GuzzleClient;
-use Google\Client as GoogleClient; 
-use Illuminate\Support\Facades\Log;
 use Exception;
+use Google\Client as GoogleClient;
+use GuzzleHttp\Client as GuzzleClient;
+use Illuminate\Support\Facades\Log;
 
 class FirebaseNotificationService
 {
-    protected $credentialsPath;
+    protected string $credentialsPath;
 
     public function __construct()
     {
         $this->credentialsPath = storage_path('app/gettin-caffe-firebase-adminsdk-fbsvc-6bfe3eefdb.json');
     }
 
-    public function sendNotification($title, $body, $target = 'all', $isTopic = true, $extraData = [])
-    {
+    public function sendNotification(
+        string $title,
+        string $body,
+        string $target = 'all',
+        bool $isTopic = true,
+        array $extraData = []
+    ): void {
         if (!file_exists($this->credentialsPath)) {
-            Log::error('Firebase credentials file missing', ['path' => $this->credentialsPath]);
-            throw new Exception("File not found at: " . $this->credentialsPath);
+            throw new Exception("Firebase credentials file not found.");
         }
 
         try {
-            $client = new GoogleClient();
-            $client->setAuthConfig($this->credentialsPath);
-            $client->addScope('https://www.googleapis.com/auth/firebase.messaging');
+            $googleClient = new GoogleClient();
+            $googleClient->setAuthConfig($this->credentialsPath);
+            $googleClient->addScope('https://www.googleapis.com/auth/firebase.messaging');
 
-            $guzzleClient = new GuzzleClient(['verify' => false]); 
-            $client->setHttpClient($guzzleClient);
+            $httpClient = new GuzzleClient([
+                'verify' => false,
+            ]);
 
-            $accessTokenArray = $client->fetchAccessTokenWithAssertion();
-            if (!isset($accessTokenArray['access_token'])) {
-                throw new Exception("Failed to obtain access token.");
+            $googleClient->setHttpClient($httpClient);
+
+            $token = $googleClient->fetchAccessTokenWithAssertion();
+
+            $formattedData = [];
+
+            foreach ($extraData as $key => $value) {
+                if (is_array($value) || is_object($value)) {
+                    $formattedData[(string) $key] = json_encode($value);
+                } else {
+                    $formattedData[(string) $key] = (string) $value;
+                }
             }
 
-            $accessToken = $accessTokenArray['access_token'];
-
-            $messagePayload = [
+            $message = [
                 'notification' => [
-                    'title' => (string)$title,
-                    'body' => (string)$body,
+                    'title' => $title,
+                    'body' => $body,
                 ],
-                'data' => array_map('strval', $extraData),
-                'android' => [
-                    'priority' => 'high',
-                ],
-                'apns' => [
-                    'payload' => [
-                        'aps' => [
-                            'sound' => 'default',
-                            'content-available' => 1
-                        ],
-                    ],
-                ],
+                'data' => $formattedData,
             ];
 
             if ($isTopic) {
-                $messagePayload['topic'] = $target;
+                $message['topic'] = $target;
             } else {
-                $messagePayload['token'] = $target;
+                $message['token'] = $target;
             }
 
-            $payload = ['message' => $messagePayload];
-
-            $response = $guzzleClient->post('https://fcm.googleapis.com/v1/projects/getin-943cd/messages:send', [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $accessToken,
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => $payload,
-            ]);
-
-            Log::info('Firebase Notification Sent Successfully');
-
+            $httpClient->post(
+                'https://fcm.googleapis.com/v1/projects/getin-943cd/messages:send',
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $token['access_token'],
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'message' => $message,
+                    ],
+                ]
+            );
         } catch (Exception $e) {
             Log::error('Firebase Notification Error: ' . $e->getMessage());
             throw $e;
