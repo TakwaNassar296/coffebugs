@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\ColorPicker;
 
 class MaterialResource extends Resource
 {
@@ -64,7 +65,7 @@ class MaterialResource extends Resource
                         Forms\Components\TextInput::make('code')
                             ->label(__('admin.code'))
                             ->maxLength(255)
-                            ->disabled(fn ($record) => $record !== null) // Disable on edit
+                            ->disabled(fn ($record) => $record !== null)
                             ->dehydrated()
                             ->helperText(__('admin.code_auto_generated')),
 
@@ -96,9 +97,8 @@ class MaterialResource extends Resource
                             ->nullable()
                             ->columnSpanFull(),
 
-                        Forms\Components\TextInput::make('color')
+                        Forms\Components\ColorPicker::make('color')
                             ->label(__('admin.color'))
-                            ->maxLength(255)
                             ->nullable(),
 
                         Forms\Components\Select::make('type')
@@ -119,13 +119,31 @@ class MaterialResource extends Resource
                             ->reactive()
                             ->suffix(fn (Get $get) => ' '.MaterialUnit::label($get('unit'))),
 
+                        Forms\Components\TextInput::make('min_stock_level')
+                            ->label('Minimum Stock Level')
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0),
+
                         Forms\Components\TextInput::make('current_quantity_material')
-                            ->label(__('admin.current_quantity_material'))
+                            ->label('Current Quantity')
                             ->numeric()
                             ->default(0.00)
                             ->minValue(0)
                             ->step(0.01)
-                            ->helperText(__('admin.current_quantity_material_helper'))
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                $current = (float) $state;
+                                $min = (float) $get('min_stock_level');
+
+                                if ($current <= 0) {
+                                    $set('status', 'out_of_stock');
+                                } elseif ($current <= $min) {
+                                    $set('status', 'low_stock');
+                                } else {
+                                    $set('status', 'good');
+                                }
+                            })
                             ->suffix(fn (Get $get) => ' '.MaterialUnit::label($get('unit'))),
 
                         Forms\Components\Select::make('unit')
@@ -137,14 +155,15 @@ class MaterialResource extends Resource
                             ->native(false),
 
                         Forms\Components\Select::make('status')
-                            ->label(__('admin.status'))
+                            ->label('Status')
                             ->options([
-                                'low_stock' => __('admin.low_stock'),
                                 'good' => __('admin.good'),
+                                'low_stock' => __('admin.low_stock'),
                                 'out_of_stock' => __('admin.out_of_stock'),
                             ])
                             ->default('good')
-                            ->required(),
+                            ->disabled()
+                            ->dehydrated(),
 
                         Forms\Components\Hidden::make('material_type')
                             ->default('internal'),
@@ -246,7 +265,6 @@ class MaterialResource extends Resource
                     ->searchable()
                     ->preload(),
             ])
-            ->filters([])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),

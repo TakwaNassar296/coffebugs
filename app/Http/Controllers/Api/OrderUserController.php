@@ -61,10 +61,14 @@ class OrderUserController extends Controller
             return $this->errorResponse('Order Not Found');
         }
 
+        //$activeStatuses = ['pending', 'in_preparation', 'shipped', 'arrived'];
+
+
         $qrUrl = null;
         $qrDataUri = null;
 
        // if ($order->type === 'pick_up') {
+        //if (in_array($order->status, $activeStatuses)) {
             $qrUrl = url('api/orders/verify') . '?' . http_build_query([
                 'token' => $order->qr_token,
                 'order_id' => $order->id,
@@ -84,6 +88,7 @@ class OrderUserController extends Controller
             $result = $writer->write($qrCode);
             $qrDataUri = $result->getDataUri();
        // }
+        //}
 
         $shouldRate = $order->status === 'completed';
 

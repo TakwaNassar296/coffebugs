@@ -279,5 +279,8 @@ return[
     'is_offer_percentage'   => 'Is Offer Percentage',
     'discount_rate'         => 'Discount Rate',
     'price_after_discount'  => 'Price After Discount',
+    'new_notification' => 'New Notification',
+    'add_materail' => 'Add Material',
+    'material_unit_standard_hint' => 'Select the standard unit of measurement for this material',
     
 ];

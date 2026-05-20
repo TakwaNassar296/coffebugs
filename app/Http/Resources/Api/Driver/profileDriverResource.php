@@ -62,7 +62,33 @@ class ProfileDriverResource extends JsonResource
                                 : asset('images/default.png'),
             'range'        => round($range, 2),
             //   'range'        => 37,
-              'total_orders_completed' => $this->orders()->where('status', 'completed')->count(),
+            'total_orders_completed' => $this->orders()->where('status', 'completed')->count(),
+           // 'email' => $this->email,
+
+           /* 'vehicle' => [
+                'type'           => $this->type_of_vehicle, 
+                'model'          => $this->vehicle_model,
+                'year'           => $this->year_of_manufacture,
+                'plate_number'   => $this->license_plate_number,
+            ],
+            
+            'license' => [
+                'id_number'      => $this->id_number,
+                'expiry_date'    => $this->license_expiry_date,
+            ],
+
+            'personal_info' => [
+                'date_of_birth' => $this->date_of_birth,
+                'nationality'   => $this->nationality,
+                'city'          => $this->city,
+                'area'          => $this->district_area,
+            ],
+
+            'work_details' => [
+                'experience'          => $this->experience, 
+                'have_gps'            => (bool) $this->have_gps,
+                'account_verified_at' => $this->account_verified_at,
+            ],*/
         ];
     }
 }

@@ -30,6 +30,7 @@ class OrderController extends Controller
 
         $ordersBranch = Order::where('booked_by_driver', 0)
             ->whereIn('status', $activeStatuses)
+            ->where('type', '!=', 'pick_up')
             ->whereIn('branch_id', $driver->branches()->pluck('branches.id'));
 
         if ($request->filled('order_num')) {
@@ -209,21 +210,29 @@ class OrderController extends Controller
         return $this->errorResponse(__('apis.order_not_found'));
     }
 
-    $qrPayload = url('api/orders/verify') . '?' . http_build_query([
-        'token' => $order->qr_token,
-        'order_id' => $order->id,
-    ]);
+    //$activeStatuses = ['pending', 'in_preparation', 'shipped', 'arrived'];
 
-    $qrCode = new \Endroid\QrCode\QrCode(
-        data: $qrPayload,
-        size: 300,
-        margin: 10
-    );
-    
-    $writer = new \Endroid\QrCode\Writer\PngWriter;
-    $result = $writer->write($qrCode);
-    $qrDataUri = $result->getDataUri();
+    //$qrPayload = "";
+    //$qrDataUri = "";
 
+    //if (in_array($order->status, $activeStatuses)) {
+
+        $qrPayload = url('api/orders/verify') . '?' . http_build_query([
+            'token' => $order->qr_token,
+            'order_id' => $order->id,
+        ]);
+
+        $qrCode = new \Endroid\QrCode\QrCode(
+            data: $qrPayload,
+            size: 300,
+            margin: 10
+        );
+        
+        $writer = new \Endroid\QrCode\Writer\PngWriter;
+        $result = $writer->write($qrCode);
+        $qrDataUri = $result->getDataUri();
+
+    //} 
     $shouldRate = $order->status === 'completed';
 
     return $this->successResponse(__('apis.order_retrieved'), [

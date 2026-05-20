@@ -4,7 +4,10 @@ namespace App\Filament\Pages;
 
 use App\Models\Admin;
 use App\Models\User;
-use App\Notifications\NotificationAdmin;
+use App\Models\Driver;
+use App\Notifications\AdminDashboardNotification;
+use App\Notifications\DriverNotification;
+use App\Notifications\UserNotification;
 use App\Services\FirebaseNotificationService;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Radio;
@@ -23,6 +26,11 @@ class Notification extends Page
     protected static string $view = 'filament.pages.notification';
 
     protected static ?string $navigationIcon = 'heroicon-o-bell-alert';
+
+    public static function getNavigationGroup(): string
+    {
+        return __('admin.notifications');
+    }
 
     public ?array $data = [];
 
@@ -50,6 +58,7 @@ class Notification extends Page
                 ->options([
                     'admin' => 'Admin',
                     'user' => 'User',
+                    'driver' => 'Driver',
                 ])
                 ->default('admin')
                 ->inline()
@@ -87,6 +96,21 @@ class Notification extends Page
                 ->searchable()
                 ->required(fn ($get) => $get('receiver_type') === 'user')
                 ->visible(fn ($get) => $get('receiver_type') === 'user'),
+
+            Select::make('driver_id')
+                ->label('Select Driver')
+                ->options(
+                    Driver::all()
+                        ->mapWithKeys(function ($driver) {
+                            return [
+                                $driver->id => $driver->first_name . ' ' . $driver->last_name . ' - ' . $driver->phone_number,
+                            ];
+                        })
+                        ->toArray()
+                )
+                ->searchable()
+                ->required(fn ($get) => $get('receiver_type') === 'driver')
+                ->visible(fn ($get) => $get('receiver_type') === 'driver'),
         ]);
     }
 
@@ -95,52 +119,37 @@ class Notification extends Page
         try {
             $state = $this->form->getState();
             $receiverType = $state['receiver_type'] ?? 'admin';
+            $title = __('admin.new_notification');
+            $message = $state['template'];
 
             if ($receiverType === 'admin') {
                 $sendToAll = $state['sendToAllAdmins'] ?? false;
 
                 if ($sendToAll) {
-                    $this->firebaseNotificationService->sendNotification(
-                        __('admin.new_notification'),
-                        $state['template'],
-                        'all',
-                        true,
-                        ['type' => 'admin_notification']
-                    );
-
-                    NotificationFacade::send(
-                        Admin::all(),
-                        new NotificationAdmin(null, $state['template'], __('admin.notification'))
-                    );
+                    $this->firebaseNotificationService->sendNotification($title, $message, 'all', true, ['type' => 'admin_notification']);
+                    NotificationFacade::send(Admin::all(), new AdminDashboardNotification($message, $title, 'admin_notification'));
                 } else {
                     $admin = Admin::find($state['admin_id'] ?? null);
-
                     if ($admin && $admin->fcm_token) {
-                        $this->firebaseNotificationService->sendNotification(
-                            __('admin.new_notification'),
-                            $state['template'],
-                            $admin->fcm_token,
-                            false,
-                            ['admin_id' => (string) $admin->id, 'type' => 'admin_notification']
-                        );
-
-                        NotificationFacade::send(
-                            $admin,
-                            new NotificationAdmin(null, $state['template'], __('admin.notification'))
-                        );
+                        $this->firebaseNotificationService->sendNotification($title, $message, $admin->fcm_token, false, ['admin_id' => (string) $admin->id, 'type' => 'admin_notification']);
+                        NotificationFacade::send($admin, new AdminDashboardNotification($message, $title, 'admin_notification'));
                     }
                 }
             } elseif ($receiverType === 'user') {
                 $user = User::find($state['user_id'] ?? null);
-
-                if ($user && $user->fcm_token) {
-                    $this->firebaseNotificationService->sendNotification(
-                        __('admin.new_notification'),
-                        $state['template'],
-                        $user->fcm_token,
-                        false,
-                        ['user_id' => (string) $user->id, 'type' => 'user_notification']
-                    );
+                if ($user) {
+                    NotificationFacade::send($user, new UserNotification($title, $message));
+                    if ($user->fcm_token) {
+                        $this->firebaseNotificationService->sendNotification($title, $message, $user->fcm_token, false, ['user_id' => (string) $user->id, 'type' => 'user_notification']);
+                    }
+                }
+            } elseif ($receiverType === 'driver') {
+                $driver = Driver::find($state['driver_id'] ?? null);
+                if ($driver) {
+                    NotificationFacade::send($driver, new DriverNotification($title, $message));
+                    if ($driver->fcm_token) {
+                        $this->firebaseNotificationService->sendNotification($title, $message, $driver->fcm_token, false, ['driver_id' => (string) $driver->id, 'type' => 'driver_notification']);
+                    }
                 }
             }
 

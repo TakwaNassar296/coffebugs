@@ -66,8 +66,39 @@ class MaterialExternalResource extends Resource
                             ->required()
                             ->numeric()
                             ->default(0.00)
-                            ->reactive()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                $current = (float) $state;
+                                $min = (float) $get('min_stock_level');
+
+                                if ($current <= 0) {
+                                    $set('status', 'out_of_stock');
+                                } elseif ($current <= $min) {
+                                    $set('status', 'low_stock');
+                                } else {
+                                    $set('status', 'good');
+                                }
+                            })
                             ->suffix(fn (Get $get) => ' '.MaterialUnit::label($get('unit'))),
+
+                        Forms\Components\TextInput::make('min_stock_level')
+                            ->label('Minimum Stock Level')
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(0)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                $current = (float) $get('quantity_in_stock');
+                                $min = (float) $state;
+
+                                if ($current <= 0) {
+                                    $set('status', 'out_of_stock');
+                                } elseif ($current <= $min) {
+                                    $set('status', 'low_stock');
+                                } else {
+                                    $set('status', 'good');
+                                }
+                            }),
 
                         Forms\Components\Select::make('unit')
                             ->label(__('admin.unit'))
@@ -93,12 +124,13 @@ class MaterialExternalResource extends Resource
                         Forms\Components\Select::make('status')
                             ->label(__('admin.status'))
                             ->options([
-                                'low_stock' => __('admin.low_stock'),
                                 'good' => __('admin.good'),
+                                'low_stock' => __('admin.low_stock'),
                                 'out_of_stock' => __('admin.out_of_stock'),
                             ])
                             ->default('good')
-                            ->required(),
+                            ->disabled()
+                            ->dehydrated(),
 
                         Forms\Components\Hidden::make('material_type')
                             ->default('external'),
@@ -134,8 +166,17 @@ class MaterialExternalResource extends Resource
 
                 Tables\Columns\TextColumn::make('quantity_in_stock')
                     ->label(__('admin.quantity_in_stock'))
-                    ->numeric()
+                    ->numeric(decimalPlaces: 2)
                     ->sortable()
+                    ->alignEnd()
+                    ->suffix(fn (Material $record) => ' '.MaterialUnit::label($record->unit)),
+
+                Tables\Columns\TextColumn::make('min_stock_level')
+                    ->label('Minimum Stock Level')
+                    ->numeric(decimalPlaces: 2)
+                    ->sortable()
+                    ->alignEnd()
+                    ->toggleable()
                     ->suffix(fn (Material $record) => ' '.MaterialUnit::label($record->unit)),
 
                 Tables\Columns\TextColumn::make('unit')

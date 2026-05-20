@@ -38,6 +38,7 @@ class OrderResource extends JsonResource
             'type'=>$this->type,
             'is_rated'    => (bool) $this->review_exists,
             'qr_token' => $this->qr_token,
+            //'qr_token' => in_array($this->status, ['pending', 'in_preparation', 'shipped', 'arrived']) ? $this->qr_token : null,
         ];
     }
 }

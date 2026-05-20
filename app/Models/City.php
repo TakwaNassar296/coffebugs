@@ -14,6 +14,12 @@ class City extends Model
         'is_active',
         'code',
         'governorate_id',
+        'delivery_price',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'delivery_price' => 'decimal:2', 
     ];
 
     protected $hidden = [
@@ -27,5 +33,10 @@ class City extends Model
     public function governorate()
     {
         return $this->belongsTo(Governorate::class);
+    }
+
+    public function branches()
+    {
+        return $this->hasMany(Branch::class);
     }
 }

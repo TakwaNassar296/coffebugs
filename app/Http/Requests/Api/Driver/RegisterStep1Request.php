@@ -30,7 +30,12 @@ class RegisterStep1Request extends FormRequest
             'first_name' => 'required|string|max:255|min:3',
             'last_name' => 'required|string|max:255|min:3',
             'country_key' => 'required|string|max:6',
-            'phone_number' => 'required|string|max:20|unique:drivers,phone_number|min:4',
+            'phone_number' => [
+                'required',
+                'string',
+                'regex:/^\+?[0-9]{5,15}$/',  
+                'unique:drivers,phone_number',
+            ],
             'email' => 'required|email|unique:drivers,email',
             'password' => 'required|string|min:8|confirmed',
             'id_number' => 'required|string|max:50',

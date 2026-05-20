@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 class Material extends Model
 {
     protected $fillable=[
-        'name','quantity_in_stock','unit','current_quantity_material', 'code','category_id','image','status','material_type','color','type'
+        'name','quantity_in_stock','unit','current_quantity_material', 'code','category_id','image','status','material_type','color','type','min_stock_level'
     ];
 
          

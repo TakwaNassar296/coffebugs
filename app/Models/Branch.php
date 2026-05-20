@@ -33,6 +33,8 @@ class Branch extends Model
         'order_receipt_time',
         'city_id',
         'governorate_id',
+        'area',
+        'service_type',
     ];
 
     protected $casts = [

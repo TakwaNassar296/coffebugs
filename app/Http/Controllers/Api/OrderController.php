@@ -326,7 +326,7 @@ class OrderController extends Controller
             );
         }
 
-        $oldOrder = Order::with(['items.optionValues', 'items.product'])
+        $oldOrder = Order::with(['items.optionValues', 'items.product', 'branch', 'userLocation'])
             ->where('user_id', $user->id)
             ->where('id', $orderId)
             ->first();
@@ -338,6 +338,17 @@ class OrderController extends Controller
         $branchId = $oldOrder->branch_id;
         if (!  $branchId ) {
             return $this->errorResponse(__('apis.branch_not_found'), 404);
+        }
+
+        $distance = $this->calculateDistance(
+            $oldOrder->branch->latitude,
+            $oldOrder->branch->longitude,
+            $oldOrder->userLocation->latitude,
+            $oldOrder->userLocation->longitude
+        );
+
+        if ($distance > (float)$oldOrder->branch->scope_work) {
+           return $this->errorResponse('The branch is outside the delivery range.', 422);
         }
 
 
@@ -707,5 +718,24 @@ class OrderController extends Controller
             'stripe_customer_id' => $stripeData['stripe_customer_id'] ?? null,
             'ephemeral_key'      => $stripeData['ephemeral_key']?->secret ?? null,
         ]);
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2): float
+    {
+        if (!is_numeric($lat1) || !is_numeric($lon1) || !is_numeric($lat2) || !is_numeric($lon2)) {
+            return PHP_FLOAT_MAX;
+        }
+
+        $earthRadius = 6371;
+        $dLat = deg2rad((float)$lat2 - (float)$lat1);
+        $dLon = deg2rad((float)$lon2 - (float)$lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad((float)$lat1)) * cos(deg2rad((float)$lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 }

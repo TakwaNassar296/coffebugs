@@ -405,4 +405,7 @@ return [
     'is_offer_percentage'   => 'نوع الخصم نسبة مئوية',
     'discount_rate'         => 'نسبة الخصم',
     'price_after_discount'  => 'السعر بعد الخصم',
+    'new_notification' => 'إشعار جديد',
+    'add_materail' => 'إضافة مادة',
+    'material_unit_standard_hint' => 'اختر وحدة القياس المعيارية لهذه المادة',
 ];

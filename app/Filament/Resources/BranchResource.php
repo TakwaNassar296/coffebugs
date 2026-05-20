@@ -25,6 +25,12 @@ use Filament\Tables;
 use Filament\Tables\Actions\ReplicateAction;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Http;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\Grid as InfoGrid;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\IconEntry;
 
 class BranchResource extends Resource
 {
@@ -81,6 +87,13 @@ class BranchResource extends Resource
                                             ->label(__('strings.branch_description'))
                                             ->required()
                                             ->maxLength(255),
+
+
+                                      //  Forms\Components\Select::make('service_type')
+                                      //      ->label('Service Type')
+                                      //      ->options(['pickup' => 'Pickup', 'delivery' => 'Delivery', 'both' => 'Both'])
+                                       //     ->required(),
+    
 
                                         Forms\Components\Select::make('coupons_id')
                                             ->label(__('strings.coupon_option'))
@@ -198,25 +211,44 @@ class BranchResource extends Resource
                                     ->showMarker()
                                     ->markerColor('#DC2626')
                                     ->showFullscreenControl()
-                                    // ->geolocate(true)
-                                    // ->geolocateLabel('تحديد موقعي الحالي')
-                                    // ->geolocateOnLoad(false)
                                     ->zoom(15)
                                     ->minZoom(0)
                                     ->maxZoom(28)
                                     ->liveLocation(true, true, 5000)
-                                    // ->columnSpanFull()
                                     ->afterStateUpdated(function (Set $set, ?array $state): void {
+                                        if (!$state) return;
+                                        
                                         $set('latitude', $state['lat']);
                                         $set('longitude', $state['lng']);
+
+                                        try {
+                                            $response = Http::withHeaders(['User-Agent' => 'i-wash/1.0'])
+                                                ->get("https://nominatim.openstreetmap.org/reverse", [
+                                                    'format' => 'jsonv2',
+                                                    'lat' => $state['lat'],
+                                                    'lon' => $state['lng'],
+                                                    'accept-language' => 'en'
+                                                ]);
+
+                                            if ($response->successful()) {
+                                                $addressData = $response->json()['address'] ?? [];
+                                                $set('area', $addressData['suburb'] ?? $addressData['neighborhood'] ?? $addressData['city_district'] ?? '');
+                                            }
+                                        } catch (\Exception $e) {
+                                            //
+                                        }
                                     })
                                     ->afterStateHydrated(function ($state, $record, Set $set): void {
                                         $set('location', [
                                             'lat' => $record?->latitude,
                                             'lng' => $record?->longitude,
                                         ]);
+                                        $set('area', $record?->area);
                                     }),
 
+                                Forms\Components\TextInput::make('area')
+                                    ->label('area') 
+                                    ->readOnly(),    
                                 Forms\Components\Section::make(__('strings.branch_image'))
                                     ->schema([
                                         Forms\Components\FileUpload::make('image')
@@ -437,6 +469,46 @@ class BranchResource extends Resource
             \App\Filament\Resources\BranchResource\RelationManagers\MaterialConsumptionsRelationManager::class,
         ];
     }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            InfoSection::make('Branch Details')->schema([
+                InfoGrid::make(3)->schema([
+                    TextEntry::make('name'),
+                    TextEntry::make('code'),
+                    TextEntry::make('phone_number'),
+                  //  TextEntry::make('service_type')
+                   //     ->label('Service Type')
+                    //    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    TextEntry::make('governorate.name'),
+                    TextEntry::make('city.name'),
+                    TextEntry::make('opening_date')
+                        ->label('Opening Time')
+                        ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : null),
+                    TextEntry::make('close_date')
+                        ->label('Closing Time')
+                        ->formatStateUsing(fn($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : null),
+                    IconEntry::make('is_active')->boolean(),
+                ]),
+            ]),
+
+            InfoSection::make('Location')->schema([
+                InfoGrid::make(2)->schema([
+                    TextEntry::make('address')->columnSpanFull(),
+                    TextEntry::make('area'),
+                    TextEntry::make('scope_work')->suffix(' KM'),
+                ]),
+            ]),
+
+            InfoSection::make('Description')->schema([
+                TextEntry::make('description')
+                    ->html()
+                    ->columnSpanFull(),
+            ]),
+        ]);
+    }
+
 
 
     public static function getPages(): array

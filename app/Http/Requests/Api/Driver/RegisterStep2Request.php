@@ -29,7 +29,7 @@ class RegisterStep2Request extends FormRequest
             'vehicle_insurance_document' => 'nullable|mimes:jpeg,png,jpg,pdf|max:2048',
             'vehicle_type_id' => 'required|exists:vehicle_types,id',
             'vehicle_model' => 'required|string|max:100',
-            'year_of_manufacture' => 'required|string|max:4',
+            'year_of_manufacture' => 'required|digits:4',
             'license_plate_number' => 'required|string|max:50',
         ];
     }

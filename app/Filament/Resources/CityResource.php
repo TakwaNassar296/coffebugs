@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Notifications\Notification; 
 
 class CityResource extends Resource
 {
@@ -69,6 +70,13 @@ class CityResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
 
+
+                      //  Forms\Components\TextInput::make('delivery_price')
+                       //     ->label('Delivery Price')
+                       //     ->required()
+                        //    ->numeric()
+                       //     ->default(0),    
+
                         // Forms\Components\Toggle::make('is_active')
                         //     ->label(__('admin.is_active'))
                         //     ->default(true),
@@ -110,12 +118,43 @@ class CityResource extends Resource
                     ->relationship('governorate', 'name'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label(__('strings.view')),
-                Tables\Actions\EditAction::make()->label(__('strings.edit')),
+                Tables\Actions\ViewAction::make()->label('View'),
+                Tables\Actions\EditAction::make()->label('Edit'),
+                Tables\Actions\DeleteAction::make()
+                    ->action(function (City $record) {
+                        if ($record->branches()->exists()) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Cannot delete city')
+                                ->body('This city has linked branches and cannot be deleted.')
+                                ->send();
+                            return;
+                        }
+
+                        $record->delete();
+
+                        Notification::make()
+                            ->success()
+                            ->title('Deleted successfully')
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->label(__('strings.delete')),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function (Collection $records) {
+                            $records->each(function ($record) {
+                                if ($record->branches()->exists()) {
+                                    Notification::make()
+                                        ->danger()
+                                        ->title("Cannot delete city: {$record->name}")
+                                        ->body('This city has linked branches and cannot be deleted.')
+                                        ->send();
+                                    return;
+                                }
+                                $record->delete();
+                            });
+                        }),
                 ]),
             ]);
     }

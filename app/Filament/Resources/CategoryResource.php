@@ -14,6 +14,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Collection;
+
 
 class CategoryResource extends Resource
 {
@@ -76,6 +79,11 @@ class CategoryResource extends Resource
                 Tables\Columns\ToggleColumn::make('is_active')
                     ->label(__('admin.is_active')),
 
+                Tables\Columns\TextColumn::make('products_count')
+                    ->label('Products Count')
+                    ->counts('products'),
+    
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('admin.created_at'))
                     ->dateTime()
@@ -90,13 +98,58 @@ class CategoryResource extends Resource
             ->filters([
                 //
             ])
-            ->actions([
-                 Tables\Actions\ViewAction::make()->button(),
-                  Tables\Actions\EditAction::make()->button(),
+           ->actions([
+                Tables\Actions\ViewAction::make()->button(),
+
+                Tables\Actions\EditAction::make()->button(),
+
+                Tables\Actions\DeleteAction::make()
+                    ->button()
+                    ->action(function (Category $record) {
+
+                        if ($record->products()->exists()) {
+
+                            Notification::make()
+                                ->danger()
+                                ->title('Cannot Delete Category')
+                                ->body('This category has linked products.')
+                                ->send();
+
+                            return;
+                        }
+
+                        $record->delete();
+
+                        Notification::make()
+                            ->success()
+                            ->title('Deleted Successfully')
+                            ->send();
+                    }),
             ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->action(function (Collection $records) {
+
+                            $records->each(function ($record) {
+
+                                if ($record->products()->exists()) {
+
+                                    Notification::make()
+                                        ->danger()
+                                        ->title("Cannot Delete Category: {$record->name}")
+                                        ->body('This category has linked products.')
+                                        ->send();
+
+                                    return;
+                                }
+
+                                $record->delete();
+                            });
+                        }),
+
                 ]),
             ]);
     }
