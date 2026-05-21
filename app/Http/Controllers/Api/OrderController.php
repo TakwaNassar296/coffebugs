@@ -128,6 +128,32 @@ class OrderController extends Controller
         $user = Auth::guard('user')->user();
         $cart = $this->getUserCart($user);
 
+        if ($request->type === 'delivery') {
+
+            $userLocation = $user->locations()
+                ->find($request->user_location_id);
+
+            if (! $userLocation) {
+                return $this->errorResponse(__('apis.location_not_found'), 404);
+            }
+
+            $branch = Branch::find($cart->branch_id);
+
+            $distance = $this->calculateDistance(
+                $branch->latitude,
+                $branch->longitude,
+                $userLocation->latitude,
+                $userLocation->longitude
+            );
+
+            if ($distance > (float) $branch->scope_work) {
+                return $this->errorResponse(
+                    'Branch is outside delivery range for this location',
+                    422
+                );
+            }
+        }
+
         if (! $cart || $cart->items->isEmpty()) {
             return $this->errorResponse(__('apis.cart_empty'), 400);
         }
@@ -328,16 +354,16 @@ class OrderController extends Controller
             return $this->errorResponse(__('apis.branch_not_found'), 404);
         }
 
-        $distance = $this->calculateDistance(
-            $oldOrder->branch->latitude,
-            $oldOrder->branch->longitude,
-            $oldOrder->userLocation->latitude,
-            $oldOrder->userLocation->longitude
-        );
+        //$distance = $this->calculateDistance(
+        //    $oldOrder->branch->latitude,
+        //    $oldOrder->branch->longitude,
+        //    $oldOrder->userLocation->latitude,
+        //    $oldOrder->userLocation->longitude
+        //);
 
-        if ($distance > (float)$oldOrder->branch->scope_work) {
-           return $this->errorResponse('The branch is outside the delivery range.', 422);
-        }
+        //if ($distance > (float)$oldOrder->branch->scope_work) {
+         //  return $this->errorResponse('The branch is outside the delivery range.', 422);
+        //}
 
 
         $unavailableItems = [];
