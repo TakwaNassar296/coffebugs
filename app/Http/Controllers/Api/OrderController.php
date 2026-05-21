@@ -532,7 +532,7 @@ class OrderController extends Controller
 
             if ($order->pay_with === 'points') {
 
-                $refundPoints = $this->calculatePointsCostFromItems($order->items);
+                $refundPoints = $this->calculatePointsCost($order->items);
 
                 if ($refundPoints > 0) {
                     $user->increment('total_points', $refundPoints);
