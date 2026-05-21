@@ -13,8 +13,8 @@ class TwilioService
 
     public function __construct()
     {
-        // $this->client = new Client(env('TWILIO_SID'), env('TWILIO_AUTH_TOKEN'));
-        $this->client = null;
+        $this->client = new Client(env('TWILIO_SID'), env('TWILIO_AUTH_TOKEN'));
+        //$this->client = null;
         $this->from = env('TWILIO_PHONE');
     }
 
@@ -29,10 +29,10 @@ class TwilioService
     public function sendSMS(string $to, string $message): bool
     {
         try {
-            // $this->client->messages->create($to, [
-            //      'from' => $this->from,
-            //      'body' => $message,
-            // ]);
+                $this->client->messages->create($to, [
+                    'from' => $this->from,
+                    'body' => $message,
+                ]);
 
             return true;
         } catch (\Exception $e) {
