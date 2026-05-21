@@ -30,6 +30,7 @@ class RegisterRequest extends FormRequest
             'country_key' => 'required|string|max:6',
             'phone_number' => 'required|unique:users,phone_number|string|max:20|min:4',
             'password'       => 'required|min:8|max:255|confirmed',
+            'terms' => 'required|accepted',
         ];
     }
 
