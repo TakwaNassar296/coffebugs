@@ -21,7 +21,9 @@ class ProductController extends Controller
         $query = Product::query()->withCount('options');
 
         if ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+            $query->whereHas('branches', function ($q) use ($request) {
+                $q->where('branches.id', $request->branch_id);
+            });
         }
 
         $data = $query->paginate(10);
