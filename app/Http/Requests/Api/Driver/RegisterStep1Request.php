@@ -33,7 +33,7 @@ class RegisterStep1Request extends FormRequest
             'phone_number' => [
                 'required',
                 'string',
-                'regex:/^[0-9]{6,15}$/',
+                'max:15',
                 'unique:drivers,phone_number',
             ],
             'email' => 'required|email|unique:drivers,email',
