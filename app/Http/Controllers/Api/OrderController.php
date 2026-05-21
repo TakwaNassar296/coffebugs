@@ -522,26 +522,36 @@ class OrderController extends Controller
             return $this->errorResponse(__('apis.order_not_found'), 404);
         }
 
-        if (in_array($order->status, ['complete'])) {
+        if (in_array($order->status, ['shipped', 'arrived', 'completed', 'canceled'])) {
             return $this->errorResponse(__('apis.invalid_order_status'), 422);
         }
 
-        $order->status = 'canceled';
-        $order->save();
+        DB::beginTransaction();
 
-        // استرجاع النقاط والنجوم
-        // foreach ($order->items as $item) {
-        //     $product = $item->product;
-        //     if ($product) {
-        //         $user->decrement('total_points', $product->points * $item->quantity);
-        //         $user->decrement('total_stars', $product->stars * $item->quantity);
-        //     }
-        // }
-        if ($order->driver) {
-            // Notification::send($order->driver, new NotificationDriver($order, "Order canceled! {$order->id}"));
+        try {
+
+            if ($order->pay_with === 'points') {
+
+                $refundPoints = $this->calculatePointsCostFromItems($order->items);
+
+                if ($refundPoints > 0) {
+                    $user->increment('total_points', $refundPoints);
+                }
+            }
+
+            $order->status = 'canceled';
+            $order->save();
+
+            DB::commit();
+
+            return $this->successResponse(__('apis.order_canceled_success'), []);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return $this->errorResponse($e->getMessage());
         }
-
-        return $this->successResponse(__('apis.order_canceled_success'), []);
     }
 
     private function calculateCharges(float $subtotal , string $type = null): array
