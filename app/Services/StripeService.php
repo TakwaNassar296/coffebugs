@@ -192,12 +192,15 @@ class StripeService
     public function handlePaymentSucceeded(\Stripe\Event $event): void
     {
         $paymentIntent = $event->data->object;
-
-        $userId  = $paymentIntent->metadata->user_id  ?? null;
+        $userId  = $paymentIntent->metadata->user_id ?? null;
         $orderId = $paymentIntent->metadata->order_id ?? null;
 
-        $user  = $userId  ? User::find($userId)  : null;
+        $user  = $userId ? User::find($userId) : null;
         $order = $orderId ? Order::find($orderId) : null;
+
+        if (!$order || $order->payment_status === 'paid') {
+            return;
+        }
 
         if ($user && $paymentIntent->payment_method) {
             $user->update(['stripe_payment_method' => $paymentIntent->payment_method]);
@@ -208,68 +211,46 @@ class StripeService
             );
         }
 
-        if ($order) {
-            $order->update(['status' => 'paid']);
-            $order->update(['points_increase_user' => $paymentIntent->metadata->points]);
+        DB::transaction(function () use ($order, $user, $paymentIntent) {
+            $status = ($paymentIntent->metadata->type === 'scheduled') ? 'scheduled' : 'paid';
+            
+            $order->update([
+                'status' => $status,
+                'payment_status' => 'paid'
+            ]);
 
-            DB::transaction(function () use ($order) {
-
-                foreach ($order->items as $item) {
-
-                    $product = Product::lockForUpdate()->find($item->product_id);
-
-
+            foreach ($order->items as $item) {
+                $product = Product::lockForUpdate()->find($item->product_id);
+                if ($product) {
                     $product->decrement('remaining_quantity', $item->quantity);
-                    $product->decrement('total_sales', $item->quantity);
-                    $product->save();
+                    $product->increment('total_sales', $item->quantity);
                 }
-            });
-
-
-            if ($paymentIntent->metadata->type === 'scheduled') {
-                $order->update(['status' => 'scheduled']);
-
-                $order->update(['points_increase_user' => $paymentIntent->metadata->points]);
-
-            DB::transaction(function () use ($order) {
-
-                foreach ($order->items as $item) {
-
-                    $product = Product::lockForUpdate()->find($item->product_id);
-
-
-                    $product->decrement('remaining_quantity', $item->quantity);
-                    $product->decrement('total_sales', $item->quantity);
-                    $product->save();
-                }
-            });
             }
-            
+
+            $rank = $user ? $user->rank() : null;
+            $totalPointsToAdd = 0;
+
+            foreach ($order->items as $item) {
+                $basePoints = $item->product->points * $item->quantity;
+                $totalPointsToAdd += $rank ? ($basePoints * $rank->points_increment) : $basePoints;
+            }
+
+            $extraPoints = (int) ($paymentIntent->metadata->points ?? 0);
+            $totalPointsToAdd += $extraPoints;
+
+            if ($totalPointsToAdd > 0) {
+                $user->increment('total_points', $totalPointsToAdd);
+                $order->update(['points_increase_user' => $totalPointsToAdd]);
+            }
+
             if ($user && $user->cart) {
-                $items = $user->cart->items;
-            
-                foreach ($items as $item) {
+                $user->cart->items()->each(function ($item) {
                     $item->optionValues()->detach();
                     $item->delete();
-                }
-                
+                });
                 $user->cart->delete();
             }
-
-
-            if ($paymentIntent->metadata->points) {
-
-                $user->total_points += $paymentIntent->metadata->points;
-                $user->save();
-            }
-
-        }
-
-
-        if ($paymentIntent->metadata->type === 'points') {
-            $user->total_points += $paymentIntent->metadata->points;
-            $user->save();
-        }
+        });
     }
 
     public function handlePaymentFailed(\Stripe\Event $event): void

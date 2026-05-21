@@ -27,7 +27,9 @@ use App\Http\Controllers\Api\AdvertisementController;
 use App\Http\Controllers\Api\BranchProductController;
 use App\Http\Controllers\Api\OrderSecheualController;
 use App\Http\Controllers\Api\BranchCategoryController;
-
+use Stripe\Event;
+use Stripe\PaymentIntent;
+use App\Services\StripeService;
 
 Route::get('/unauthorized', function () {
     return response()->json([
@@ -252,4 +254,38 @@ Route::middleware('auth:user')->group(function () {
     Route::delete('stripe/payment-method/detach', [OrderController::class, 'stripDetachPaymentMethod']);
     
 
+});
+
+
+Route::get('/test-stripe-callback/{order}', function (\App\Models\Order $order) {
+
+    $user = $order->user;
+
+    // fake payment intent object exactly like stripe sends
+    $paymentIntent = new PaymentIntent();
+
+    $paymentIntent->payment_method = 'pm_card_visa';
+
+    $paymentIntent->metadata = (object) [
+        'user_id'  => $user?->id,
+        'order_id' => $order->id,
+        'type'     => 'instant', // or scheduled
+        'points'   => 10
+    ];
+
+    // fake stripe event
+    $event = new Event();
+    $event->data = (object) [
+        'object' => $paymentIntent
+    ];
+
+    // call same real method
+    app(StripeService::class)->handlePaymentSucceeded($event);
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Test callback executed successfully',
+        'order' => \App\Models\Order::find($order->id),
+        'user' => \App\Models\User::find($user?->id),
+    ]);
 });

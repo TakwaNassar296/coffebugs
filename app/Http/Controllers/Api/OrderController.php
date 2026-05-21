@@ -135,49 +135,38 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
+            $paymentStatus = 'pending';
+            $totalPointsCost = 0;
 
-            // Handle payment with points
-              $totalPointsCost = $this->calculatePointsCost($cart);
             if ($request['pay_with'] === 'points') {
                 $totalPointsCost = $this->calculatePointsCost($cart);
                 $this->validateAndDeductPoints($user, $totalPointsCost);
-
-                 $subtotal = 0;
+                $paymentStatus = 'paid';
+                $subtotal = 0;
                 $discount = 0;
                 $couponId = null;
                 $deliveryCharge = 0;
                 $tax = 0;
                 $finalTotal = 0;
             } else {
-                // Handle payment with money (existing logic)
                 [$subtotal, $discount, $couponId] = $this->applyCoupon($request['coupon_code'], $cart);
                 [$deliveryCharge, $tax] = $this->calculateCharges($subtotal, $request->type);
                 $finalTotal = $this->calculateFinalTotal($subtotal, $discount, $tax, $deliveryCharge);
             }
 
-            //if ($request['pay_with'] === 'points') {
-               // $user->total_points = $user->total_points - $totalPointsCost;
-                //$user->save();
-           // }
-            $order = $this->createOrder($user, $cart, $request, $finalTotal, $discount, $couponId, $tax, $deliveryCharge, $subtotal);
+            $order = $this->createOrder($user, $cart, $request, $finalTotal, $discount, $couponId, $tax, $deliveryCharge, $subtotal, $paymentStatus);
 
             $this->processOrderItems($order, $cart, $user);
-            
 
             if ($request['pay_with'] === 'points') {
                 $this->clearCart($cart);
             }
 
-            $drivers = $order->branch->drivers;
-
-
-            // Notification::send($drivers, new NotificationDriver($order, "New order received! {$order->id}"));
-
+            $paymentIntent = null;
+            $ephemeralKey = null;
 
             if ($request['pay_with'] === 'money') {
-
-               
-                $stripeData    = $this->stripeService->createPaymentIntent(
+                $stripeData = $this->stripeService->createPaymentIntent(
                     $user,
                     $finalTotal,
                     $request->payment_method,
@@ -185,9 +174,8 @@ class OrderController extends Controller
                     $totalPointsCost,
                 );
                 $paymentIntent = $stripeData['payment_intent'];
-                $ephemeralKey  = $stripeData['ephemeral_key'];
+                $ephemeralKey = $stripeData['ephemeral_key'];
             }
-
 
             DB::commit();
 
@@ -235,7 +223,7 @@ class OrderController extends Controller
         return [$subtotal, $discount, $couponId];
     }
 
-    private function createOrder($user, $cart, $request, $finalTotal, $discount, $couponId, $tax, $deliveryCharge, $subtotal)
+    private function createOrder($user, $cart, $request, $finalTotal, $discount, $couponId, $tax, $deliveryCharge, $subtotal , $paymentStatus)
     {
        // $driverFinance = SiteSetting::first()->driver_finance ?? 20;
 
@@ -258,7 +246,7 @@ class OrderController extends Controller
             'type' => $request['type'],
             'pay_with' => $request['pay_with'],
             'driver_finance' => $driverFinance,
-            'payment_status' => 'paid',
+            'payment_status' => $paymentStatus,
         ]);
     }
 
@@ -279,11 +267,11 @@ class OrderController extends Controller
                 }
             }
     
-            $product = $cartItem->product;
-            $product->increment('total_sales', $cartItem->quantity);
+            //$product = $cartItem->product;
+            //$product->increment('total_sales', $cartItem->quantity);
             
             // التحقق من أن الدفع بالمال لزيادة النقاط
-            if ($order->pay_with === 'money') {
+            /*if ($order->pay_with === 'money') {
                 $basePoints = $product->points * $cartItem->quantity;
                 $baseStars = $product->stars * $cartItem->quantity;
     
@@ -301,7 +289,7 @@ class OrderController extends Controller
                 // يجب أن تكون هذه الأسطر هنا داخل الـ IF
                 $user->increment('total_points', $pointsToAdd);
                 $user->increment('total_stars', $starsToAdd);
-            }
+            }*/
         }
     }
 

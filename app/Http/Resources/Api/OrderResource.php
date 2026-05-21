@@ -24,6 +24,7 @@ class OrderResource extends JsonResource
             'user'       => $this->user ? new ProfileResource($this->user) : null,
             'user_location' => $this->user_location_id ? new UserLocationResource($this->userLocation) : null,
             'status'      => $this->status ?? null,
+            //'paymentStatus'      => $this->payment_status ?? null,
             'created_at'  => $this->created_at->format('Y-m-d H:i:s') ?? null,
             'items'       => OrderItemResource::collection($this->items),
             'count_items' => $this->items->count(),
