@@ -205,10 +205,13 @@ class Product extends Model
 
 public function getDeliveryProductTimeAttribute()
 {
-    $start = (float) $this->stat_minutes; 
+    $start = (float) $this->stat_minutes;
     $end = (float) $this->end_minutes;
-    
-    return $end . ' - ' . $start;  
+
+    $min = min($start, $end);
+    $max = max($start, $end);
+
+    return $min . ' - ' . $max . ' min';
 }
 
 /**
