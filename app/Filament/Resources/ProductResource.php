@@ -26,6 +26,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Infolists\Components\Grid;
+use Filament\Forms\Components\Hidden;
 
 class ProductResource extends Resource
 {
