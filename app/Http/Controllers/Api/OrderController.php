@@ -532,7 +532,7 @@ class OrderController extends Controller
 
             if ($order->pay_with === 'points') {
 
-                $refundPoints = $this->calculatePointsCost($order->items);
+                $refundPoints = $this->calculatePointsFromOrderItems($order->items);
 
                 if ($refundPoints > 0) {
                     $user->increment('total_points', $refundPoints);
@@ -762,5 +762,20 @@ class OrderController extends Controller
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
+    }
+
+    private function calculatePointsFromOrderItems($items)
+    {
+        $total = 0;
+
+        foreach ($items as $item) {
+            $product = $item->product;
+
+            if ($product && $product->price_with_points) {
+                $total += $product->price_with_points * $item->quantity;
+            }
+        }
+
+        return $total;
     }
 }
