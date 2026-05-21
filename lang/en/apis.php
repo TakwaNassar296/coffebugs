@@ -81,4 +81,5 @@ return [
     'payment_methods' => 'Payment methods retrieved successfully.',
     'payment_method_detached' => 'Payment method detached successfully.',
     'points_purchased' => 'Points purchased successfully.',
+    'location_not_found' => 'Location not found.',
 ];

@@ -81,4 +81,5 @@ return [
     'payment_methods' => 'تم استرجاع طرق الدفع بنجاح.',
     'payment_method_detached' => 'تم فصل طريقة الدفع بنجاح.',
     'points_purchased' => 'تم شراء النقاط بنجاح.',
+    'location_not_found' => 'لم يتم العثور على الموقع.',
 ];

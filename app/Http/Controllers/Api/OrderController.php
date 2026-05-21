@@ -128,6 +128,12 @@ class OrderController extends Controller
         $user = Auth::guard('user')->user();
         $cart = $this->getUserCart($user);
 
+        
+        if (! $cart || $cart->items->isEmpty()) {
+            return $this->errorResponse(__('apis.cart_empty'), 400);
+        }
+
+
         if ($request->type === 'delivery') {
 
             $userLocation = $user->locations()
@@ -153,11 +159,6 @@ class OrderController extends Controller
                 );
             }
         }
-
-        if (! $cart || $cart->items->isEmpty()) {
-            return $this->errorResponse(__('apis.cart_empty'), 400);
-        }
-
         DB::beginTransaction();
 
         try {
