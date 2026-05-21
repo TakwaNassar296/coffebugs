@@ -10,6 +10,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
