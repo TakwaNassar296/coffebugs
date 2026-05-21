@@ -65,6 +65,9 @@ class ProfileDriverResource extends JsonResource
             'total_orders_completed' => $this->orders()->where('status', 'completed')->count(),
            // 'email' => $this->email,
 
+           //'city' => $this->city,
+           //'district_area' => $this->district_area,
+
            /* 'vehicle' => [
                 'type'           => $this->type_of_vehicle, 
                 'model'          => $this->vehicle_model,
