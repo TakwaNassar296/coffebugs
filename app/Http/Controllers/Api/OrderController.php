@@ -34,7 +34,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'coupon_code' => 'nullable|string|exists:coupons,code',
-            'type'        => 'required|in:delivery,pick_up',
+            'type'        => 'nullable|in:delivery,pick_up',
         ]);
 
         $user = Auth::guard('user')->user();
