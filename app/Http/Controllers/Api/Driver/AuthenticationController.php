@@ -55,12 +55,12 @@ class AuthenticationController extends Controller
         }
 
         $token = $driver->createToken('driver_token')->plainTextToken;
-
-        return $this->successResponse(__('apis.login_success'), [
-            'driver' => new DriverResource($driver),
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 200);
+        return $this->successResponse(__('apis.login_success'), array_merge(
+            (new DriverResource($driver))->toArray($request),
+            [
+                'token_type' => 'Bearer',
+            ]
+        ), 200);
     }
 
     public function verifyOtp(VerifOtpRequest $request)
