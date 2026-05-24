@@ -71,11 +71,11 @@ class CityResource extends Resource
                             ->maxLength(255),
 
 
-                      //  Forms\Components\TextInput::make('delivery_price')
-                       //     ->label('Delivery Price')
-                       //     ->required()
-                        //    ->numeric()
-                       //     ->default(0),    
+                        Forms\Components\TextInput::make('delivery_price')
+                            ->label('Delivery Price')
+                            ->required()
+                            ->numeric()
+                            ->default(0),    
 
                         // Forms\Components\Toggle::make('is_active')
                         //     ->label(__('admin.is_active'))

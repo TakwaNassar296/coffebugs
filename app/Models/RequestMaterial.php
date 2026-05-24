@@ -18,12 +18,18 @@ class RequestMaterial extends Model
         'delivery_status',
         'delivery_feedback',
         'delivery_confirmed_at',
+        'stock_at_request',
+        'min_stock_at_request',
+        'max_stock_at_request'
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2',
         'approved_quantity' => 'decimal:2',
         'delivery_confirmed_at' => 'datetime',
+        'stock_at_request' => 'decimal:2',
+        'min_stock_at_request' => 'decimal:2',
+        'max_stock_at_request' => 'decimal:2',
     ];
 
     public function branch()

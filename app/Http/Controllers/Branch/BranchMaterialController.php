@@ -122,18 +122,20 @@ class BranchMaterialController extends Controller
                 'quantity' => $request->quantity,
                 'status' => 'pending',
                 'comment' => $request->comment,
+                'stock_at_request' => $branchMaterial?->quantity_in_stock ?? 0,
+                'min_stock_at_request' => $branchMaterial?->min_limit ?? 0,
+                'max_stock_at_request' => $branchMaterial?->max_limit ?? 0,
             ]);
 
             DB::commit();
 
             return $this->successResponse(
-                'Material request created successfully.',
+                'Material request created successfully',
                 [
                     'request_id' => $materialRequest->id,
+                    'requested_quantity' => $requested,
+                    'allowed_quantity' => $allowed,
                     'status' => $materialRequest->status,
-                    'type' => $materialRequest->material->material_type ?? 'internal',
-                    'material' => $materialRequest->material->name ?? null,
-                    'quantity' => $materialRequest->quantity,
                 ],
                 201
             );

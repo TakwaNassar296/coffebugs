@@ -41,6 +41,9 @@ class WasteMaterialResource extends Resource
         return __('admin.materials');
     }
 
+    protected static bool $shouldRegisterNavigation = false;
+
+
     public static function getNavigationBadge(): ?string
     {
         $user = auth('admin')->user();

@@ -282,5 +282,19 @@ return[
     'new_notification' => 'New Notification',
     'add_materail' => 'Add Material',
     'material_unit_standard_hint' => 'Select the standard unit of measurement for this material',
-    
+    'approve' => 'Approve',
+    'reject' => 'Reject',
+    'approve_material_request' => 'Approve Material Request',
+    'reject_material_request' => 'Reject Material Request',
+    'approved_quantity' => 'Approved Quantity',
+    'description' => 'Description',
+    'maximum' => 'Maximum allowed: :max',
+    'rejection_reason' => 'Rejection Reason',
+    'please_provide_rejection_reason' => 'Please provide the reason for rejection.',
+    'request_approved_successfully' => 'Request approved successfully.',
+    'request_rejected' => 'Request rejected.',
+    'error' => 'Error',
+    'branch_products_using_material' => 'Branch Products Using This Material',
+
+
 ];

@@ -35,12 +35,14 @@ class Branch extends Model
         'governorate_id',
         'area',
         'service_type',
+        'is_active',
     ];
 
     protected $casts = [
         'opening_date' => 'datetime:H:i',
         'close_date'   => 'datetime:H:i',
         'images' => 'array',
+        'is_active' => 'boolean',
 
     ];
 

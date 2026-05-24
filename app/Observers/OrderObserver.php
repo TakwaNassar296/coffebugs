@@ -2,13 +2,15 @@
 
 namespace App\Observers;
 
-use App\Models\Order;
 use App\Models\Admin;
+use App\Models\Order;
+use App\Notifications\NotificationAdmin;
+use App\Notifications\UserNotification;
 use App\Services\FirebaseNotificationService;
 use Filament\Notifications\Notification as FilamentNotification;
-use Illuminate\Support\Facades\Notification as NotificationFacade;
-use App\Notifications\NotificationAdmin;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Facades\Notification;
 
 class OrderObserver
 {
@@ -74,6 +76,8 @@ class OrderObserver
                     'order_num' => $order->order_num,
                     'status' => $statusText
                 ]);
+
+                Notification::send($user, new UserNotification($title, $body));
 
                 $extraData = [
                     'type' => 'order',

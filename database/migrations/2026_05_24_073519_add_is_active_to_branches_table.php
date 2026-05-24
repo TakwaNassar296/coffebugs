@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('branches', function (Blueprint $table) {
 
-            if (!Schema::hasColumn('users', 'delivery_type')) {
+            if (!Schema::hasColumn('branches', 'is_active')) {
 
-                $table->enum('delivery_type', ['branch', 'delivery'])
-                    ->nullable()
+                $table->boolean('is_active')
+                    ->default(true)
                     ->after('phone_number');
             }
         });
@@ -27,10 +27,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('branches', function (Blueprint $table) {
 
-            if (Schema::hasColumn('users', 'delivery_type')) {
-                $table->dropColumn('delivery_type');
+            if (Schema::hasColumn('branches', 'is_active')) {
+                $table->dropColumn('is_active');
             }
         });
     }

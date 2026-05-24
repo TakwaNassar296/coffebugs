@@ -12,8 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('product_values', function (Blueprint $table) {
-            $table->string('color')->nullable()->after('value');
-            $table->enum('type', ['cold', 'hot'])->nullable()->after('color');
+
+            if (!Schema::hasColumn('product_values', 'color')) {
+                $table->string('color')
+                    ->nullable()
+                    ->after('value');
+            }
+
+            if (!Schema::hasColumn('product_values', 'type')) {
+                $table->enum('type', ['cold', 'hot'])
+                    ->nullable()
+                    ->after('color');
+            }
         });
     }
 
@@ -23,7 +33,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('product_values', function (Blueprint $table) {
-            $table->dropColumn(['color', 'type']);
+
+            if (Schema::hasColumn('product_values', 'color')) {
+                $table->dropColumn('color');
+            }
+
+            if (Schema::hasColumn('product_values', 'type')) {
+                $table->dropColumn('type');
+            }
         });
     }
 };

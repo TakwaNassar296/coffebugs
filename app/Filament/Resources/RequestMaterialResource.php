@@ -22,6 +22,11 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
+use Filament\Support\Colors\Color;
+
 
 class RequestMaterialResource extends Resource
 {
@@ -46,14 +51,14 @@ class RequestMaterialResource extends Resource
 
     public static function getNavigationGroup(): string
     {
-        return __('admin.branches_managment');
+        return __('admin.materials');
     }
 
     public static function getNavigationBadge(): ?string
     {
         $auth = auth()->guard('admin')->user();
         if ($auth && $auth->super_admin == 1) {
-            return static::getModel()::where('status', 'pending')->count();
+            return static::getModel()::count();
         }
 
         return null;
@@ -250,6 +255,22 @@ class RequestMaterialResource extends Resource
                         'rejected' => __('admin.rejected'),
                     ]),
 
+                SelectFilter::make('material_type')
+                    ->label('Material Type')
+                    ->options([
+                        'internal' => 'Internal',
+                        'external' => 'External',
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if (! $data['value']) {
+                            return $query;
+                        }
+
+                        return $query->whereHas('material', function ($q) use ($data) {
+                            $q->where('material_type', $data['value']);
+                        });
+                    }),    
+
                 SelectFilter::make('branch_id')
                     ->label(__('admin.branch'))
                     ->relationship('branch', 'name')
@@ -398,6 +419,93 @@ class RequestMaterialResource extends Resource
             ]);
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Section::make(__('admin.request_information'))
+                    ->schema([
+                        TextEntry::make('branch.name')
+                            ->label(__('admin.branch')),
+                        TextEntry::make('material.name')
+                            ->label(__('admin.material_name')),
+                        TextEntry::make('quantity')
+                            ->label(__('admin.requested_quantity'))
+                            ->formatStateUsing(fn($state, $record) => MaterialUnit::formatQuantity((float) $state, $record->material?->unit)),
+                        TextEntry::make('status')
+                            ->label(__('admin.status'))
+                            ->badge()
+                            ->color(fn(string $state): string => match ($state) {
+                                'pending' => 'warning',
+                                'approved' => 'success',
+                                'partially_approved' => 'info',
+                                'rejected' => 'danger',
+                                default => 'secondary',
+                            }),
+                        TextEntry::make('approved_quantity')
+                            ->label(__('admin.approved_quantity'))
+                            ->formatStateUsing(fn($state, $record) => $state ? MaterialUnit::formatQuantity((float) $state, $record->material?->unit) : '-'),
+                        TextEntry::make('comment')
+                            ->label(__('admin.description'))
+                            ->columnSpanFull(),
+                    ])->columns(3),
+
+                Section::make('Stock Context & Analysis')
+                    ->schema([
+                        TextEntry::make('stock_at_request')
+                            ->label('Stock at Request')
+                            ->numeric(decimalPlaces: 2),
+                        TextEntry::make('min_stock_at_request')
+                            ->label('Min Stock Level')
+                            ->numeric(decimalPlaces: 2),
+                        TextEntry::make('max_stock_at_request')
+                            ->label('Max Stock Level')
+                            ->numeric(decimalPlaces: 2),
+                        TextEntry::make('available_to_request')
+                            ->label('Available to Request')
+                            ->state(fn($record) => max(0, (float)$record->max_stock_at_request - (float)$record->stock_at_request))
+                            ->numeric(decimalPlaces: 2)
+                            ->color(Color::Emerald)
+                            ->weight('bold'),
+                        TextEntry::make('admin_notes')
+                            ->label('System Analysis')
+                            ->columnSpan(2)
+                            ->html()
+                            ->state(function ($record) {
+                                $allowed = (float)$record->max_stock_at_request - (float)$record->stock_at_request;
+                                $notes = [];
+
+                                if ((float)$record->quantity > $allowed) {
+                                    $notes[] = '<span style="color:red; font-weight:bold;">⚠️ Request exceeds available capacity.</span>';
+                                }
+
+                                if ((float)$record->stock_at_request < (float)$record->min_stock_at_request) {
+                                    $notes[] = '<span style="color:orange; font-weight:bold;">🔥 Urgent: Current stock below minimum level.</span>';
+                                }
+
+                                return !empty($notes) ? implode('<br>', $notes) : '<span style="color:green;">Stock status normal.</span>';
+                            }),
+                    ])->columns(3),
+
+                Section::make(__('admin.delivery_confirmation'))
+                    ->schema([
+                        TextEntry::make('delivery_status')
+                            ->label(__('admin.delivery_status'))
+                            ->badge()
+                            ->color(fn($state) => match ($state) {
+                                'delivered', 'accept' => 'success',
+                                'not_delivered', 'reject' => 'danger',
+                                default => 'gray'
+                            }),
+                        TextEntry::make('delivery_feedback')
+                            ->label(__('admin.delivery_feedback')),
+                        TextEntry::make('delivery_confirmed_at')
+                            ->label(__('admin.delivery_confirmed_at'))
+                            ->dateTime('Y-m-d H:i:s'),
+                    ])->columns(3)
+                    ->visible(fn($record) => $record && in_array($record->status, ['approved', 'partially_approved'])),
+            ]);
+    }
     public static function getRelations(): array
     {
         return [

@@ -49,9 +49,10 @@ class BranchMaterial extends Model
      */
     public function getRemainingQuantityAttribute(): float
     {
-        $quantityInStock = (float) ($this->quantity_in_stock ?? 0);
-        $currentQuantity = (float) ($this->current_quantity ?? 0);
-        return max(0, $quantityInStock - $currentQuantity);
+        $maxLimit = (float) ($this->max_limit ?? 0);
+        $currentStock = (float) ($this->current_quantity ?? 0);
+
+        return max(0, $maxLimit - $currentStock);
     }
 }
  

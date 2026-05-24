@@ -12,8 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('materials', function (Blueprint $table) {
-            $table->string('color')->nullable()->after('name');
-            $table->enum('type', ['cold', 'hot'])->nullable()->after('color');
+
+            if (!Schema::hasColumn('materials', 'color')) {
+                $table->string('color')
+                    ->nullable()
+                    ->after('name');
+            }
+
+            if (!Schema::hasColumn('materials', 'type')) {
+                $table->enum('type', ['cold', 'hot'])
+                    ->nullable()
+                    ->after('color');
+            }
         });
     }
 
@@ -23,7 +33,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('materials', function (Blueprint $table) {
-            $table->dropColumn(['color', 'type']);
+
+            if (Schema::hasColumn('materials', 'color')) {
+                $table->dropColumn('color');
+            }
+
+            if (Schema::hasColumn('materials', 'type')) {
+                $table->dropColumn('type');
+            }
         });
     }
 };

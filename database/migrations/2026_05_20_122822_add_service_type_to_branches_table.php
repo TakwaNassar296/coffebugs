@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('branches', function (Blueprint $table) {
-            $table->enum('service_type', ['pickup', 'delivery', 'both'])->nullable()->after('id');
+
+            if (!Schema::hasColumn('branches', 'service_type')) {
+
+                $table->enum('service_type', ['pickup', 'delivery', 'both'])
+                    ->nullable()
+                    ->after('id');
+            }
         });
     }
 
@@ -22,7 +28,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('branches', function (Blueprint $table) {
-            $table->dropColumn('service_type');
+
+            if (Schema::hasColumn('branches', 'service_type')) {
+                $table->dropColumn('service_type');
+            }
         });
     }
 };

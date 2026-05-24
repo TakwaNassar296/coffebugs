@@ -72,7 +72,6 @@ class MaterialResource extends Resource
                         Forms\Components\Select::make('category_id')
                             ->label(__('admin.category'))
                             ->relationship('category', 'name')
-                            ->searchable()
                             ->preload()
                             ->nullable()
                             ->createOptionForm([
@@ -119,18 +118,13 @@ class MaterialResource extends Resource
                             ->reactive()
                             ->suffix(fn (Get $get) => ' '.MaterialUnit::label($get('unit'))),
 
-                        Forms\Components\TextInput::make('min_stock_level')
-                            ->label('Minimum Stock Level')
-                            ->numeric()
-                            ->default(0)
-                            ->minValue(0),
-
                         Forms\Components\TextInput::make('current_quantity_material')
                             ->label('Current Quantity')
                             ->numeric()
                             ->default(0.00)
                             ->minValue(0)
                             ->step(0.01)
+                            ->required()
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                 $current = (float) $state;
@@ -144,7 +138,16 @@ class MaterialResource extends Resource
                                     $set('status', 'good');
                                 }
                             })
-                            ->suffix(fn (Get $get) => ' '.MaterialUnit::label($get('unit'))),
+                            ->suffix(fn(Get $get) => ' ' . MaterialUnit::label($get('unit'))),    
+
+                        Forms\Components\TextInput::make('min_stock_level')
+                            ->label('Minimum Stock Level')
+                            ->numeric()
+                            ->default(0)
+                            ->required()
+                            ->minValue(0),
+ 
+
 
                         Forms\Components\Select::make('unit')
                             ->label(__('admin.unit'))
@@ -167,7 +170,11 @@ class MaterialResource extends Resource
 
                         Forms\Components\Hidden::make('material_type')
                             ->default('internal'),
-                    ])->columns(2),
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Is Active')
+                            ->default(true),
+
+            ])->columns(2),
             ]);
     }
 
@@ -191,6 +198,10 @@ class MaterialResource extends Resource
                     ->sortable()
                     ->toggleable(),
 
+            Tables\Columns\ToggleColumn::make('is_active')
+                ->label('Active')
+                ->sortable(),    
+
                 Tables\Columns\TextColumn::make('category.name')
                     ->label(__('admin.category'))
                     ->searchable()
@@ -201,6 +212,7 @@ class MaterialResource extends Resource
                     ->label(__('admin.quantity_in_stock'))
                     ->numeric(decimalPlaces: 2)
                     ->sortable()
+                    ->searchable()
                     ->alignEnd()
                     ->suffix(fn (Material $record) => ' '.MaterialUnit::label($record->unit)),
 
@@ -217,7 +229,7 @@ class MaterialResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn ($state) => MaterialUnit::label($state)),
 
-                Tables\Columns\TextColumn::make('color')
+                Tables\Columns\ColorColumn::make('color')
                     ->label(__('admin.color'))
                     ->searchable()
                     ->toggleable(),
@@ -275,6 +287,7 @@ class MaterialResource extends Resource
                 ]),
             ]);
     }
+    
 
     public static function getRelations(): array
     {

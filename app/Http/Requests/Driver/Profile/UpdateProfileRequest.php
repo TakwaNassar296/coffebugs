@@ -23,11 +23,12 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-          'first_name' => 'required|required|string|max:255|min:3',
+            'first_name' => 'required|required|string|max:255|min:3',
             'last_name'  => 'required|required|string|max:255|min:3',
             'phone_number'      => 'required|string|max:20|min:8|unique:drivers,phone_number,' . auth('driver')->id(),
             'image'      => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'new_password' => 'nullable|min:8|max:255|string',
+            'country_key' => 'required|string|max:6',
         ];
     }
 

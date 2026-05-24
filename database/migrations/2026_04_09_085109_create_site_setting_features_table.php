@@ -11,14 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('site_setting_features', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('site_setting_id')->constrained('site_settings')->onDelete('cascade');
-            $table->string('title')->nullable();
-            $table->text('description')->nullable();
-            $table->string('image')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('site_setting_features')) {
+
+            Schema::create('site_setting_features', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('site_setting_id')->constrained('site_settings')->onDelete('cascade');
+                $table->string('title')->nullable();
+                $table->text('description')->nullable();
+                $table->string('image')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
@@ -26,6 +29,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('site_setting_features');
+        if (!Schema::hasTable('site_setting_features')) {
+            Schema::dropIfExists('site_setting_features');
+        }
     }
 };

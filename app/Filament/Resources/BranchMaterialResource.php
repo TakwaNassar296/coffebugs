@@ -65,7 +65,7 @@ class BranchMaterialResource extends Resource
                             ->columnSpan(1),
 
                         Forms\Components\Select::make('material_id')
-                            ->label(__('strings.material'))
+                            ->label('Material')
                             ->relationship('material', 'name')
                             ->unique(ignoreRecord: true, modifyRuleUsing: fn ($rule, $get) => $rule->where('branch_id', $get('branch_id')))
                             ->searchable()
@@ -146,7 +146,7 @@ class BranchMaterialResource extends Resource
                         ,
 
                         Forms\Components\Placeholder::make('remaining_quantity')
-                            ->label(__('admin.remaining_quantity'))
+                            ->label('Available to Request')
                             ->content(function ($record, $get) {
                                 if (! $record) {
                                     $currentQuantity = (float) ($get('current_quantity') ?? 0);

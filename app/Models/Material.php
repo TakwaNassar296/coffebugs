@@ -10,9 +10,16 @@ use Illuminate\Database\Eloquent\Model;
 class Material extends Model
 {
     protected $fillable=[
-        'name','quantity_in_stock','unit','current_quantity_material', 'code','category_id','image','status','material_type','color','type','min_stock_level'
+        'name','quantity_in_stock','unit','current_quantity_material', 'code','category_id','image','status','material_type','color','type','min_stock_level',
+        'is_active',
+     
     ];
 
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'min_stock_level' => 'decimal:2',
+    ];
          
     public function requestMaterials()
     {

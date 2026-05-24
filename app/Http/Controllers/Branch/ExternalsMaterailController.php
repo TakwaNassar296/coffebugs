@@ -85,6 +85,10 @@ class ExternalsMaterailController extends Controller
                 'quantity' => $request->quantity,
                 'status' => 'pending',
                 'comment' => $request->comment,
+
+                'stock_at_request' => $branchMaterial?->quantity_in_stock ?? 0,
+                'min_stock_at_request' => $branchMaterial?->min_limit ?? 0,
+                'max_stock_at_request' => $branchMaterial?->max_limit ?? 0,
             ]);
 
             DB::commit();

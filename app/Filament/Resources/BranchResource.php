@@ -81,11 +81,13 @@ class BranchResource extends Resource
                                         Forms\Components\TextInput::make('name')
                                             ->label(__('strings.branch_name'))
                                             ->required()
+                                            ->columnSpanFull()
                                             ->maxLength(255),
 
-                                        Forms\Components\TextInput::make('description')
+                                        Forms\Components\RichEditor::make('description')
                                             ->label(__('strings.branch_description'))
                                             ->required()
+                                            ->columnSpanFull()
                                             ->maxLength(255),
 
 
@@ -151,6 +153,11 @@ class BranchResource extends Resource
                                             ->required()
                                             ->unique(ignoreRecord: true)
                                             ->maxLength(255),
+
+                                        Forms\Components\Toggle::make('is_active')
+                                            ->label('Is Active')
+                                            ->default(true),
+
 
                                         Grid::make(1)
                                             ->schema([
@@ -369,10 +376,13 @@ class BranchResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('strings.branch_name'))
                     ->searchable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label(__('strings.branch_description'))
-                    ->limit(25)
-                    ->searchable(),
+                Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Active')
+                    ->sortable(),    
+               // Tables\Columns\TextColumn::make('description')
+               //     ->label(__('strings.branch_description'))
+               //     ->limit(25)
+                //    ->searchable(),
 
                 Tables\Columns\TextColumn::make('governorate.name')
                     ->label(__('strings.governorate'))
@@ -495,7 +505,6 @@ class BranchResource extends Resource
 
             InfoSection::make('Location')->schema([
                 InfoGrid::make(2)->schema([
-                    TextEntry::make('address')->columnSpanFull(),
                     TextEntry::make('area'),
                     TextEntry::make('scope_work')->suffix(' KM'),
                 ]),

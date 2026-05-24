@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('materials', function (Blueprint $table) {
-            $table->decimal('min_stock_level', 10, 2)->default(0)->after('current_quantity_material');
+
+            if (!Schema::hasColumn('materials', 'min_stock_level')) {
+
+                $table->decimal('min_stock_level', 10, 2)
+                    ->default(0)
+                    ->after('current_quantity_material');
+            }
         });
     }
 
@@ -22,7 +28,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('materials', function (Blueprint $table) {
-            $table->dropColumn('min_stock_level');
+
+            if (Schema::hasColumn('materials', 'min_stock_level')) {
+                $table->dropColumn('min_stock_level');
+            }
         });
     }
 };

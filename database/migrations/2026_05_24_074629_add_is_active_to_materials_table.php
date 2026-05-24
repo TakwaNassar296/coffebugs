@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('branches', function (Blueprint $table) {
+        Schema::table('materials', function (Blueprint $table) {
 
-            if (!Schema::hasColumn('branches', 'area')) {
+            if (!Schema::hasColumn('materials', 'is_active')) {
 
-                $table->string('area')
-                    ->nullable()
-                    ->after('longitude');
+                $table->boolean('is_active')
+                    ->default(true);
             }
         });
     }
@@ -27,10 +26,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('branches', function (Blueprint $table) {
+        Schema::table('materials', function (Blueprint $table) {
 
-            if (Schema::hasColumn('branches', 'area')) {
-                $table->dropColumn('area');
+            if (Schema::hasColumn('materials', 'is_active')) {
+                $table->dropColumn('is_active');
             }
         });
     }

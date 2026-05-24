@@ -86,6 +86,7 @@ class MaterialExternalResource extends Resource
                             ->numeric()
                             ->default(0)
                             ->minValue(0)
+                            ->required()
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                 $current = (float) $get('quantity_in_stock');
@@ -100,7 +101,8 @@ class MaterialExternalResource extends Resource
                                 }
                             }),
 
-                        Forms\Components\Select::make('unit')
+
+                Forms\Components\Select::make('unit')
                             ->label(__('admin.unit'))
                             ->required()
                             ->helperText(__('admin.material_unit_standard_hint'))
@@ -134,7 +136,12 @@ class MaterialExternalResource extends Resource
 
                         Forms\Components\Hidden::make('material_type')
                             ->default('external'),
-                    ])->columns(2),
+
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Is Active')
+                            ->default(true),
+
+            ])->columns(2),
             ]);
     }
 
@@ -157,6 +164,10 @@ class MaterialExternalResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
+
+                Tables\Columns\ToggleColumn::make('is_active')
+                    ->label('Active')
+                    ->sortable(),    
 
                 Tables\Columns\TextColumn::make('category.name')
                     ->label(__('admin.category'))
