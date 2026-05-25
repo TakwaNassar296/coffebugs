@@ -76,18 +76,18 @@ class SiteSettings extends Page
                             ->helperText(__('admin.gallery_images_helper'))
                             ->required(),
 
-                        TextInput::make('delivery_charge')
-                            ->label(__('strings.delivery_charge'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->required(),
-                            
+                        // TextInput::make('delivery_charge')
+                        //     ->label(__('strings.delivery_charge'))
+                        //     ->numeric()
+                        //     ->minValue(0)
+                        //     ->required(),
+
                         TextInput::make('driver_finance')
                             ->label(__('strings.driver_finance'))
                             ->numeric()
                             ->minValue(0)
                             ->step(0.01)
-                            ->required(),        
+                            ->required(),
 
                         TextInput::make('tax_percentage')
                             ->label(__('strings.tax_percentage'))
@@ -144,7 +144,7 @@ class SiteSettings extends Page
                                 RichEditor::make('description')->label(__('strings.description'))->required(),
                                 FileUpload::make('image')
                                     ->label(__('strings.image'))
-                                    ->image() 
+                                    ->image()
                                     ->directory('uploads/site_images')
                                     ->maxSize(2048)
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'image/jpg'])
@@ -152,7 +152,7 @@ class SiteSettings extends Page
                                     ->required(),
                             ])
                             ->columns(2)
-                            ->columnSpanFull(),    
+                            ->columnSpanFull(),
                     ])->columns(2)
             ])->statePath('data');
     }
@@ -165,11 +165,11 @@ class SiteSettings extends Page
             if (is_string($images)) {
                 $images = json_decode($images, true) ?: [];
             }
-            
+
             $this->form->fill([
                 'image' => $siteSetting->image ? $siteSetting->image : null,
                 'images' => $images,
-                'delivery_charge' => $siteSetting->delivery_charge ?? '',
+                // 'delivery_charge' => $siteSetting->delivery_charge ?? '',
                 'driver_finance' => $siteSetting->driver_finance ?? '',
                 'tax_percentage' => $siteSetting->tax_percentage ?? '',
                 'free_delivery_minimum' => $siteSetting->free_delivery_minimum ?? '',
@@ -195,7 +195,7 @@ class SiteSettings extends Page
         $settings->fill([
             'image' => $data['image'],
             'images' => $imagesJson,
-            'delivery_charge' => $data['delivery_charge'],
+            // 'delivery_charge' => $data['delivery_charge'],
             'driver_finance' => $data['driver_finance'],
             'tax_percentage' => $data['tax_percentage'],
             'free_delivery_minimum' => $data['free_delivery_minimum'],
@@ -209,7 +209,7 @@ class SiteSettings extends Page
 
         if ($settings->save()) {
             if (isset($data['features'])) {
-                $settings->features()->delete(); 
+                $settings->features()->delete();
                 foreach ($data['features'] as $feature) {
                     $settings->features()->create([
                         'title' => $feature['title'],

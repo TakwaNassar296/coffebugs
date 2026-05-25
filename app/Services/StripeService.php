@@ -215,7 +215,7 @@ class StripeService
             $status = ($paymentIntent->metadata->type === 'scheduled') ? 'scheduled' : 'paid';
             
             $order->update([
-                'status' => $status,
+               // 'status' => $status,
                 'payment_status' => 'paid'
             ]);
 

@@ -15,7 +15,9 @@ class BranchCategoryController extends Controller
     use ApiResponse;
         public function index($branchId)
     {
-       $branch = Branch::find($branchId);
+        $branch = Branch::where('id', $branchId)
+            ->where('is_active', 1)
+            ->first();
 
         if (!$branch){
             return $this->errorResponse("Branch Not Found" , 404);

@@ -9,6 +9,11 @@ use App\Filament\Resources\OrderResource;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use App\Models\Order;
+use Filament\Notifications\Notification;
 
 class ViewOrder extends ViewRecord
 {
@@ -18,6 +23,66 @@ class ViewOrder extends ViewRecord
     {
         return [
             // Actions\EditAction::make(),
+            Action::make('changeStatus')
+                ->label(__('strings.change_status'))
+                ->icon('heroicon-m-pencil-square')
+                ->color('primary')
+                ->modalHeading(__('strings.change_status'))
+                ->modalSubmitActionLabel(__('strings.save'))
+                ->modalWidth('md')
+                ->form([
+                    Select::make('status')
+                        ->label(__('strings.status'))
+                        ->required()
+                        ->default(fn($record) => $record->status)
+                        ->options([
+                            'pending'        => __('strings.pending'),
+                            'under_receipt'  => __('strings.under_receipt'),
+                            'under_review'   => __('strings.under_review'),
+                            'in_preparation' => __('strings.in_preparation'),
+                            'prepared'       => __('strings.prepared'),
+                            'shipped'        => __('strings.shipped'),
+                            'arrived'        => __('strings.arrived'),
+                            'completed'      => __('strings.completed'),
+                            'canceled'       => __('strings.canceled'),
+                        ])
+                        ->live()
+                        ->native(false),
+
+                    Textarea::make('cancelled_reason')
+                        ->label(__('strings.cancel_reason'))
+                        ->rows(3)
+                        ->visible(fn($get) => $get('status') === 'canceled')
+                        ->required(fn($get) => $get('status') === 'canceled')
+                        ->maxLength(500),
+                ])
+                ->action(function (array $data, Order $record) {
+                    try {
+                        // Update the order
+                        $record->status = $data['status'];
+
+                        if ($data['status'] === 'canceled') {
+                            $record->cancelled_reason = $data['cancelled_reason'];
+                        } else {
+                            $record->cancelled_reason = null;
+                        }
+
+                        $record->save();
+
+                        // Send success notification
+                        Notification::make()
+                            ->title(__('strings.order_status_updated_successfully'))
+                            ->success()
+                            ->send();
+                    } catch (\Exception $e) {
+                        // Send error notification
+                        Notification::make()
+                            ->title(__('strings.error'))
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
         ];
     }
 

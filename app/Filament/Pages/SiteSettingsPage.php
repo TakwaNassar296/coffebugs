@@ -70,11 +70,11 @@ class SiteSettingsPage extends Page
                             ->rules('image', 'mimes:jpg,jpeg,png,webp')
                             ->required(),
 
-                        TextInput::make('delivery_charge')
-                            ->label('تكلفة التوصيل')
-                            ->numeric()
-                            ->minValue(0)
-                            ->required(),
+                        // TextInput::make('delivery_charge')
+                        //     ->label('تكلفة التوصيل')
+                        //     ->numeric()
+                        //     ->minValue(0)
+                        //     ->required(),
 
                         TextInput::make('tax_percentage')
                             ->label('نسبة الضريبة')
@@ -101,7 +101,7 @@ class SiteSettingsPage extends Page
                 'title' => $siteSetting->title ?? '',
                 'image' => $siteSetting->image ?  $siteSetting->image : null,
                 'description' => $siteSetting->description ?? '',
-                'delivery_charge' => $siteSetting->delivery_charge ?? '',
+                // 'delivery_charge' => $siteSetting->delivery_charge ?? '',
                 'tax_percentage' => $siteSetting->tax_percentage ?? '',
                 'free_delivery_minimum' => $siteSetting->free_delivery_minimum ?? '',
             ]);
@@ -121,7 +121,7 @@ class SiteSettingsPage extends Page
             'title' => $data['title'],
             'description' => $data['description'],
             'image' => $data['image'],
-            'delivery_charge' => $data['delivery_charge'],
+            // 'delivery_charge' => $data['delivery_charge'],
             'tax_percentage' => $data['tax_percentage'],
             'free_delivery_minimum' => $data['free_delivery_minimum'],
 
@@ -141,7 +141,7 @@ class SiteSettingsPage extends Page
     }
 
 
-   public static function canAccess(): bool
+    public static function canAccess(): bool
     {
         return auth('admin')->user()?->super_admin == 1;
     }

@@ -99,10 +99,16 @@ class CityResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+
                 Tables\Columns\TextColumn::make('code')
                     ->label(__('strings.code'))
                     
                     ->searchable(),
+
+
+                Tables\Columns\TextColumn::make('delivery_price')
+                    ->label('Delivery Price')
+                    ->sortable(),                    
 
                 // Tables\Columns\ToggleColumn::make('is_active')
                 //     ->label(__('admin.is_active')),

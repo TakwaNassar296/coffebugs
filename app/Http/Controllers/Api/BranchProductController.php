@@ -17,7 +17,7 @@ class BranchProductController extends Controller
 
     public function baseProducts($branchId)
     {
-        $branch = Branch::find($branchId);
+        $branch = Branch::where('id', $branchId)->where('is_active', 1)->first();
 
         if (! $branch) {
             return $this->errorResponse('Branch Not Found', 404);
@@ -78,7 +78,7 @@ class BranchProductController extends Controller
 
     public function filterProducts(Request $request, $branchId)
     {
-        $branch = Branch::find($branchId);
+        $branch = Branch::where('id', $branchId)->where('is_active', 1)->first();
 
         if (! $branch) {
             return $this->errorResponse('Branch Not Found', 404);
@@ -113,7 +113,7 @@ class BranchProductController extends Controller
 
     public function priceRange($branchId)
     {
-        $branch = Branch::find($branchId);
+        $branch = Branch::where('id', $branchId)->where('is_active', 1)->first();
 
         if (! $branch) {
             return $this->errorResponse('Branch Not Found', 404);

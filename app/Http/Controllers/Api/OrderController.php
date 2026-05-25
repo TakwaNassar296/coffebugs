@@ -38,64 +38,51 @@ class OrderController extends Controller
         ]);
 
         $user = Auth::guard('user')->user();
-
         $cart = $user->cart()->with('items')->first();
 
         if (! $cart || $cart->items->isEmpty()) {
             return $this->errorResponse(__('apis.cart_empty'), 422);
         }
 
-        // check Distance
-        // $branch = $cart->branch;
-        // $userLocation = $user->locations()->findOrFail($request->user_location_id);
-        // $check = $branch->isInsideScope($userLocation->latitude, $userLocation->longitude);
-        // if (!$check['inside']) {
-        //     return $this->errorResponse(__('apis.branch_delivery_area'), 400, [
-        //         'distance'    => $check['distance'],
-        //         'scope_work'  => $check['scope'],
-        //     ]);
-        // }
-
         $itemTotal = $cart->items->sum('total_price');
-
-        $deliveryCharge = (float) SiteSetting::value('delivery_charge', 0);
         $taxPercentage = (float) SiteSetting::value('tax_percentage', 0);
-        $freeDeliveryMinimum = (float) SiteSetting::value('free_delivery_minimum', 0);
-
         $deliveryCharge = 0;
+
         if ($request->type === 'delivery') {
-            $deliveryCharge = (float) SiteSetting::value('delivery_charge', 0);
+            $branch = \App\Models\Branch::with('city')->find($cart->branch_id);
+
+            $deliveryCharge = ($branch && $branch->city)
+                ? (float) $branch->city->delivery_price
+                : (float) SiteSetting::value('delivery_charge', 0);
+
             $freeDeliveryMinimum = (float) SiteSetting::value('free_delivery_minimum', 0);
 
-            if ($itemTotal >= $freeDeliveryMinimum) {
+            if ($freeDeliveryMinimum > 0 && $itemTotal >= $freeDeliveryMinimum) {
                 $deliveryCharge = 0;
             }
         }
 
         $taxAmount = round(($itemTotal * $taxPercentage) / 100, 2);
         $discount = 0;
-        $couponData = null;
 
-        if ($request['coupon_code']) {
+        if ($request->filled('coupon_code')) {
             $coupon = Coupon::where('code', $request->coupon_code)
                 ->where('is_active', true)
                 ->whereDate('start_date', '<=', now())
                 ->whereDate('end_date', '>=', now())
                 ->first();
-            if (! $coupon) {
-                return $this->errorResponse(__('apis.invalid_coupon'));
-            }
 
-            if ($coupon->discount_type === 'percent') {
-                $discount = round(($itemTotal * $coupon->discount_value) / 100, 2);
-            } elseif ($coupon->discount_type === 'fixed') {
-                $discount = min($coupon->discount_value, $itemTotal);
+            if ($coupon) {
+                if ($coupon->discount_type === 'percent') {
+                    $discount = round(($itemTotal * $coupon->discount_value) / 100, 2);
+                } elseif ($coupon->discount_type === 'fixed') {
+                    $discount = min($coupon->discount_value, $itemTotal);
+                }
             }
         }
 
         $total = round($itemTotal - $discount + $taxAmount + $deliveryCharge, 2);
 
-        // Calculate total points cost
         $totalPointsCost = 0;
         foreach ($cart->items as $cartItem) {
             if ($cartItem->product && ! is_null($cartItem->product->price_with_points)) {
@@ -103,9 +90,10 @@ class OrderController extends Controller
             }
         }
 
-        $descriptionDelivery = ($request->type === 'delivery') 
-            ? SiteSetting::value('text_order', "Delivery charges apply based on your location.") 
+        $descriptionDelivery = ($request->type === 'delivery')
+            ? SiteSetting::value('text_order', "Delivery charges apply based on your location.")
             : "No delivery charges apply for pick up orders.";
+
         return $this->successResponse(__('apis.order_summary'), [
             'subtotal' => round($itemTotal, 2),
             'discount' => $discount,
@@ -113,10 +101,8 @@ class OrderController extends Controller
             'tax' => $taxAmount,
             'total' => $total,
             'total_price_with_points' => $totalPointsCost,
-            'user_total_pints' =>  $user->total_points,
+            'user_total_pints' => $user->total_points,
             'description_delivery' => $descriptionDelivery,
-
-
         ]);
     }
 
@@ -177,7 +163,7 @@ class OrderController extends Controller
                 $finalTotal = 0;
             } else {
                 [$subtotal, $discount, $couponId] = $this->applyCoupon($request['coupon_code'], $cart);
-                [$deliveryCharge, $tax] = $this->calculateCharges($subtotal, $request->type);
+                [$deliveryCharge, $tax] = $this->calculateCharges($subtotal, $request->type, $branch);
                 $finalTotal = $this->calculateFinalTotal($subtotal, $discount, $tax, $deliveryCharge);
             }
 
@@ -554,12 +540,17 @@ class OrderController extends Controller
         }
     }
 
-    private function calculateCharges(float $subtotal , string $type = null): array
+    private function calculateCharges(float $subtotal , string $type = null , $branch = null ): array
     {
-        $deliveryCharge = (float) SiteSetting::value('delivery_charge', 0);
+        $deliveryCharge = ($branch && $branch->city)
+            ? (float) $branch->city->delivery_price
+            : (float) SiteSetting::value('delivery_charge', 0);
         $taxPercentage = (float) SiteSetting::value('tax_percentage', 0);
         $freeDeliveryMinimum = (float) SiteSetting::value('free_delivery_minimum', 0);
 
+
+      
+       
         if ($type === 'pick_up' || ($freeDeliveryMinimum > 0 && $subtotal >= $freeDeliveryMinimum)) {
             $deliveryCharge = 0;
         }

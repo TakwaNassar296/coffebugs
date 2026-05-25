@@ -18,10 +18,14 @@ class CartResource extends JsonResource
     {
         $sub_total = $this->items->sum('total_price');
         $free_delivery_minimum = (float) SiteSetting::value('free_delivery_minimum', 0);
+        $branch = \App\Models\Branch::with('city')->find($this->branch_id);
+
         if ($sub_total >= $free_delivery_minimum) {
             $delivery_charge = 0;
         } else {
-            $delivery_charge = (float) SiteSetting::value('delivery_charge', 0);
+            $delivery_charge = ($branch && $branch->city)
+                ? (float) $branch->city->delivery_price
+                : (float) SiteSetting::value('delivery_charge', 0);
         }
         $tax_percentage = (float) SiteSetting::value('tax_percentage', 0);
         $tax = round(($sub_total * $tax_percentage) / 100, 2);

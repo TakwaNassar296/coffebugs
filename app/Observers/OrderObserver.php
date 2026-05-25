@@ -18,6 +18,10 @@ class OrderObserver
     {
         $this->generateOrderNumber($order);
         $this->notifyAdminsOnNewOrder($order);
+
+        if ($order->status === 'pending') {
+            $this->notifyDriversOfNewOrder($order);
+        }
     }
 
     public function updated(Order $order): void
@@ -208,6 +212,43 @@ class OrderObserver
                 ->body($body)
                 ->success()
                 ->sendToDatabase($admin);
+        }
+    }
+
+    protected function notifyDriversOfNewOrder(Order $order): void
+    {
+        $title = __('admin.new_order_available_title');
+        $body = __('admin.new_order_available_body', [
+            'order_num' => $order->order_num,
+            'branch' => $order->branch->name ?? 'الفرع'
+        ]);
+
+        $extraData = [
+            'type' => 'new_order_available',
+            'order_id' => (string)$order->id,
+        ];
+
+        $this->notifyDriversOfBranch($order, $title, $body, $extraData);
+    }
+
+    protected function notifyDriversOfBranch(Order $order, string $title, string $body, array $extraData = []): void
+    {
+        $drivers = \App\Models\Driver::whereHas('branches', function ($query) use ($order) {
+            $query->where('branches.id', $order->branch_id);
+        })->get();
+
+        $firebaseService = new \App\Services\FirebaseNotificationService();
+
+        foreach ($drivers as $driver) {
+            $driver->notify(new \App\Notifications\NotificationDriver($order, $title, $body));
+
+            if ($driver->fcm_token) {
+                try {
+                    $firebaseService->sendNotification($title, $body, $driver->fcm_token, false, $extraData);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("FCM Failed for Driver {$driver->id}: " . $e->getMessage());
+                }
+            }
         }
     }
 }

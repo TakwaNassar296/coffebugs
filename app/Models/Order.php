@@ -94,13 +94,12 @@ class Order extends Model
         return $this->belongsTo(Driver::class);
     }
 
-    public function calculateFinance()
+    public function calculateFinance($branch = null)
     {
-        $finance = SiteSetting::first()->delivery_charge ?? 20;
-
-        return $finance;
+        return ($branch && $branch->city)
+            ? (float) $branch->city->delivery_price
+            : (float) SiteSetting::value('delivery_charge', 20);
     }
-
     /**
      * Query Scopes for better code readability and maintainability
      */

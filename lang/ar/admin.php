@@ -408,4 +408,6 @@ return [
     'new_notification' => 'إشعار جديد',
     'add_materail' => 'إضافة مادة',
     'material_unit_standard_hint' => 'اختر وحدة القياس المعيارية لهذه المادة',
+    'new_order_available_title' => 'طلب توصيل جديد متاح! 📦',
+    'new_order_available_body' => 'طلب جديد رقم :order_num متاح في فرع :branch، اضغط للاطلاع عليه.',
 ];

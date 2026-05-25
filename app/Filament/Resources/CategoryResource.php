@@ -58,6 +58,7 @@ class CategoryResource extends Resource
                 ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()->label(__('admin.name'))
+                    ->unique()
                     ->maxLength(255),
 
                     Forms\Components\FileUpload::make('image')

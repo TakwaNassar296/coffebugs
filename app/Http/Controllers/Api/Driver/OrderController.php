@@ -31,7 +31,8 @@ class OrderController extends Controller
         $ordersBranch = Order::where('booked_by_driver', 0)
             ->whereIn('status', $activeStatuses)
             ->where('type', '!=', 'pick_up')
-            ->whereIn('branch_id', $driver->branches()->pluck('branches.id'));
+            ->whereIn('branch_id', $driver->branches()->pluck('branches.id'))
+            ->latest();
 
         if ($request->filled('order_num')) {
             $ordersBranch->where('order_num', 'like', '%' . $request->order_num . '%');
@@ -121,7 +122,7 @@ class OrderController extends Controller
     // get orders on delivery where orders status is pending or shipped
     public function onDelivery(Request $request)
     {
-        $orders = Order::whereIn('status', ['pending', 'shipped'])->where('driver_id', auth('driver')->id())->when($request->filled('order_num'), function ($q) use ($request) {
+        $orders = Order::whereIn('status', ['pending', 'shipped', 'prepared'])->where('driver_id', auth('driver')->id())->when($request->filled('order_num'), function ($q) use ($request) {
             $q->where('order_num', 'like', '%' . $request->order_num . '%');
         })->paginate(10);
 

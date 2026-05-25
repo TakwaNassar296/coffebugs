@@ -295,6 +295,8 @@ return[
     'request_rejected' => 'Request rejected.',
     'error' => 'Error',
     'branch_products_using_material' => 'Branch Products Using This Material',
+    'new_order_available_title' => 'New delivery order available! 📦',
+    'new_order_available_body' => 'A new order #:order_num is available at :branch branch, tap to view details.',
 
 
 ];

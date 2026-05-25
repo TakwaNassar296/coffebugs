@@ -39,6 +39,7 @@ class BranchUserController extends Controller
         $userLng = $request->longitude;
 
         $branches = Branch::query()
+            ->where('is_active', 1)
             ->when($request->filled('name'), function ($query) use ($request) {
                 $query->where('name', 'like', "%{$request->name}%");
             })
@@ -96,8 +97,8 @@ class BranchUserController extends Controller
 
     public function getBranches(Request $request)
     {
-       
-        $branches = Branch::all();
+
+        $branches = Branch::where('is_active', 1)->get();
        return $this->successResponse('Branches fetched Successfully',BranchResource::collection(  $branches));
     }
 }

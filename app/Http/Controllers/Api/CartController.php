@@ -154,7 +154,13 @@ class CartController extends Controller
         $cart = $user->cart()->with('items')->first();
         $itemTotal = $cart->items->sum('total_price');
 
-        $deliveryCharge = (float) SiteSetting::value('delivery_charge', 0);
+        $branch = \App\Models\Branch::with('city')->find($cart->branch_id);
+
+        $deliveryCharge = ($branch && $branch->city)
+            ? (float) $branch->city->delivery_price
+            : (float) SiteSetting::value('delivery_charge', 0);
+
+
         $taxPercentage = (float) SiteSetting::value('tax_percentage', 0);
         $freeDeliveryMinimum = (float) SiteSetting::value('free_delivery_minimum', 0);
 

@@ -95,6 +95,10 @@ final class BranchProductAdmin
 
         foreach ($productMaterials as $pm) {
             foreach ($pm->items as $item) {
+
+                if (empty($item->material_id)) {
+                    continue; 
+                }
                 $key = $item->material_id.'_'.$item->unit;
 
                 if (! isset($combinedMaterials[$key])) {
